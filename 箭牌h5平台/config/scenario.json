@@ -56,6 +56,8 @@
       "report": "arrowhome://repair/create?from=ai_assistant",
       "progress": "arrowhome://repair/list?from=ai_assistant"
     },
-    "note": "只做跳转，不对接工单系统。真实地址待箭牌 APP 确认。"
+    "note": "已打开报修页。单据进度也在这个页面里查看。",
+    "cardTitle": "报修",
+    "cardBody": "助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。"
   }
 }

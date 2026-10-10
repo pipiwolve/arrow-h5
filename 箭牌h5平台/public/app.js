@@ -131,7 +131,16 @@ function addCard(card) {
     }
     el.append(row);
   } else if (card.event === 'demo.repair') {
-    el.innerHTML = `<div class="lv">报修跳转</div><div>${data.note || ''}</div><div>${data.deeplink || ''}</div>`;
+    el.innerHTML = `<div class="lv">${data.title || '报修'}</div><div>${data.body || data.note || ''}</div>`;
+    if (data.deeplink) {
+      const row = document.createElement('div');
+      row.className = 'actions';
+      const go = document.createElement('a');
+      go.href = data.deeplink;
+      go.textContent = '打开报修页';
+      row.append(go);
+      el.append(row);
+    }
   }
   $('stream').append(el);
   el.scrollIntoView({ block: 'end' });
@@ -326,7 +335,7 @@ function unlockComposer() {
   $('textInput').disabled = false;
   $('textSend').disabled = false;
   $('btnMic').disabled = false;
-  document.querySelectorAll('.prompts button').forEach((btn) => { btn.disabled = false; });
+  enableStarters();
 }
 
 async function startCall() {
@@ -367,6 +376,12 @@ async function stopCall() {
   }
   sessionId = null;
 }
+
+$('prompts').onclick = (e) => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.disabled) return;
+  sendText(btn.dataset.text || btn.textContent);
+};
 
 $('nav').onclick = (e) => {
   const btn = e.target.closest('button');
@@ -544,42 +559,11 @@ window.visualViewport?.addEventListener('resize', pinKeyboard);
 window.visualViewport?.addEventListener('scroll', pinKeyboard);
 window.addEventListener('pagehide', () => { stopCall(); });
 
-function fillStarters(items, enabled) {
-  const wrap = document.createElement('div');
-  wrap.className = 'prompts';
-  const groups = new Map();
-  for (const item of items || []) {
-    const text = typeof item === 'string' ? item : item.text;
-    const group = typeof item === 'string' ? '' : (item.group || '');
-    if (!text) continue;
-    if (!groups.has(group)) groups.set(group, []);
-    groups.get(group).push(text);
-  }
-  for (const [group, phrases] of groups) {
-    const block = document.createElement('div');
-    block.className = 'prompt-group';
-    if (group) {
-      const label = document.createElement('p');
-      label.className = 'prompt-label';
-      label.textContent = group;
-      block.append(label);
-    }
-    for (const phrase of phrases) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = phrase;
-      btn.disabled = !enabled;
-      btn.onclick = () => sendText(phrase);
-      block.append(btn);
-    }
-    wrap.append(block);
-  }
-  $('stream').append(wrap);
-  return wrap;
+function enableStarters() {
+  document.querySelectorAll('#prompts button').forEach((btn) => { btn.disabled = false; });
 }
 
 api('/api/config').then((cfg) => {
   $('credHint').textContent = cfg.ready ? '' : `还不能连接，缺 ${cfg.missing.join('、')}`;
-  fillStarters(cfg.starters, false);
   if (cfg.ready) startCall();
 }).catch((e) => { $('credHint').textContent = e.message; });

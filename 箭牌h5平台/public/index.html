@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>箭牌智家 AI 助手</title>
 <link rel="icon" href="favicon.png">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 <link rel="prefetch" href="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js" as="script">
 </head>
 <body>
@@ -33,7 +33,15 @@
         <div id="therevideo"></div>
         <div id="herevideo"></div>
       </div>
-      <div class="stream" id="stream" aria-live="polite"></div>
+      <div class="stream" id="stream" aria-live="polite">
+        <div class="prompts" id="prompts">
+          <button type="button" data-text="把主卫的浴缸进水打开" disabled>把主卫的浴缸进水打开</button>
+          <button type="button" data-text="把主卫坐便器的大冲打开" disabled>把主卫坐便器的大冲打开</button>
+          <button type="button" data-text="把主卫镜柜的夜灯打开" disabled>把主卫镜柜的夜灯打开</button>
+          <button type="button" data-text="我家坐便器不出水了，要报修" disabled>我家坐便器不出水了，要报修</button>
+          <button type="button" data-text="AKB1357 有哪些功能" disabled>AKB1357 有哪些功能</button>
+        </div>
+      </div>
       <div class="dock" id="dock">
         <form class="composer" id="textForm">
           <label class="sr" for="textInput">发给智能体的文字</label>
@@ -67,6 +75,6 @@
   </main>
 </div>
 <script src="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

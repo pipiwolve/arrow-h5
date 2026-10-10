@@ -80,7 +80,14 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
       });
       cards.push({
         event: 'demo.repair',
-        data: { kind: which, deeplink, note: scenario.repair.note, say: action.say || '' },
+        data: {
+          kind: which,
+          deeplink,
+          title: scenario.repair.cardTitle || '报修',
+          body: scenario.repair.cardBody || scenario.repair.note,
+          note: scenario.repair.note,
+          say: action.say || '',
+        },
       });
       return { cards, receipt: scenario.repair.note };
     }
