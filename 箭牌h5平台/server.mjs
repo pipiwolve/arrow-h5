@@ -20,7 +20,6 @@ import { createTurn } from './src/turn.mjs';
 import { actionFromCall, classifyFrame, extractAction, functionResultFrame } from './src/frames.mjs';
 import { buildRole, visibleReply } from './src/roster.mjs';
 import { createGateway } from '../箭牌demo打通/iot/mock-gateway.mjs';
-import { createAsrClient } from '../箭牌demo打通/src/asr-client.mjs';
 
 const ENV = loadEnv(ROOT);
 const PORT = Number(ENV.PORT || 8900);
@@ -124,37 +123,6 @@ function credentialsReady() {
   return Boolean(brtc.appid && brtc.ak && brtc.sk && brtc.licKey);
 }
 
-// 按住说话不走房间 ASR。房间按键模式松开后会把转写直接送进模型。
-// 本目录没写 Key 时沿用箭牌 demo 的同一把，不把密钥抄进这个文件。
-function asrKey() {
-  if (ENV.ASR_API_KEY) return ENV.ASR_API_KEY;
-  try {
-    const text = fs.readFileSync(path.join(ROOT, '../箭牌demo打通/.env'), 'utf8');
-    const line = text.split('\n').find((l) => l.trim().startsWith('ASR_API_KEY='));
-    return line ? line.slice(line.indexOf('=') + 1).trim() : '';
-  } catch {
-    return '';
-  }
-}
-
-const ASR_KEY = asrKey();
-const asr = createAsrClient({
-  apiKey: ASR_KEY,
-  devPid: Number(ENV.ASR_DEV_PID || 80001),
-  cuid: ENV.ASR_CUID || 'arrow-brtc-h5',
-});
-
-async function readRaw(req, limit = 2_000_000) {
-  const chunks = [];
-  let n = 0;
-  for await (const c of req) {
-    n += c.length;
-    if (n > limit) throw new Error('音频过大');
-    chunks.push(c);
-  }
-  return Buffer.concat(chunks);
-}
-
 const routes = {
   async 'GET /api/config'() {
     return {
@@ -167,19 +135,8 @@ const routes = {
       sayhi: SCENARIO.agent.sayhi || '',
       fixture: FIXTURE_NAME,
       homeId: SCENARIO.iot.homeId,
-      voice: Boolean(ASR_KEY),
+      voice: true,
     };
-  },
-
-  async 'POST /api/asr'(req) {
-    if (!ASR_KEY) return { status: 400, body: { error: '未配置 ASR_API_KEY，语音输入不可用' } };
-    const pcm = await readRaw(req);
-    try {
-      const out = await asr.recognize(pcm);
-      return { text: out.text, ms: out.ms };
-    } catch (e) {
-      return { status: 400, body: { error: String(e.message || e) } };
-    }
   },
 
   async 'GET /api/roster'() {

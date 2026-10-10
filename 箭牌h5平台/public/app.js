@@ -13,7 +13,6 @@ let licPassed = false;
 let holding = false;
 let dictating = false;
 let lastAsk = '';
-let voiceOn = false;
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
@@ -179,7 +178,6 @@ async function onAgentFrame(msg) {
     const passed = data.includes('[PASS]');
     licPassed = passed;
     setStatus(passed ? '已连接' : '授权未通过');
-    if (passed) sendCmd('[E]:[CMD]:[ASR_DISABLE_REALTIME]');
     return;
   }
   if (data.startsWith('[F]:')) {
@@ -208,10 +206,19 @@ async function onAgentFrame(msg) {
     // 按住说话时，房间 ASR 的中间态和最终句都回填输入框，不进对话。
     // 最终句可能晚于松手到达，所以用 dictating 守住这一轮。
     if (dictating) {
-      if (text) $('textInput').value = text;
       if (!partial) {
         dictating = false;
-        micNote(text ? '已填入输入框，确认后发送' : '没听清，再说一次', !text);
+        const spoken = userEcho(text, '').text;
+        $('textInput').value = '';
+        if (spoken) {
+          micNote('');
+          sentText = spoken;
+          lastAsk = spoken;
+          userBubble = addBubble('user', spoken);
+          userBubble.dataset.local = '1';
+        } else {
+          micNote('没听清，再说一次', true);
+        }
       }
       return;
     }
@@ -296,7 +303,7 @@ function startRtc(join) {
 function unlockComposer() {
   $('textInput').disabled = false;
   $('textSend').disabled = false;
-  $('btnMic').disabled = !voiceOn;
+  $('btnMic').disabled = false;
   document.querySelectorAll('.prompts button').forEach((btn) => { btn.disabled = false; });
 }
 
@@ -331,9 +338,6 @@ async function startCall() {
 async function stopCall() {
   holding = false;
   dictating = false;
-  micCap.want = false;
-  micCap.on = false;
-  stopMicTracks();
   licPassed = false;
   try { if (typeof window.BRTC_Stop === 'function') window.BRTC_Stop(); } catch {}
   if (sessionId) {
@@ -453,18 +457,6 @@ $('btnAudit').onclick = loadAudit;
 
 let micTimer = 0;
 
-// 本地录音。房间的按键 ASR 在松开时会把转写送进模型，所以这段音频不进 BRTC。
-const TAP = `class Tap extends AudioWorkletProcessor {
-  process(inputs) {
-    const ch = inputs[0] && inputs[0][0];
-    if (ch && ch.length) this.port.postMessage(new Float32Array(ch));
-    return true;
-  }
-}
-registerProcessor('tap', Tap);
-`;
-const micCap = { want: false, on: false, chunks: [], ctx: null, stream: null, rate: 16000 };
-
 function micNote(text, err) {
   const el = $('composerNote');
   el.hidden = !text;
@@ -472,129 +464,29 @@ function micNote(text, err) {
   el.classList.toggle('err', !!err);
 }
 
-function toPcm16(chunks, srcRate) {
-  const total = chunks.reduce((n, c) => n + c.length, 0);
-  const flat = new Float32Array(total);
-  let o = 0;
-  for (const c of chunks) { flat.set(c, o); o += c.length; }
-  const ratio = srcRate === 16000 ? 1 : 16000 / srcRate;
-  const n = Math.max(0, Math.floor(total * ratio));
-  const out = new Int16Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = flat[ratio === 1 ? i : Math.min(total - 1, Math.round(i / ratio))];
-    const v = x < -1 ? -1 : x > 1 ? 1 : x;
-    out[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
-  }
-  return out;
-}
-
-function stopMicTracks() {
-  try { micCap.stream?.getTracks().forEach((t) => t.stop()); } catch {}
-  micCap.stream = null;
-}
-
-async function startHold() {
-  if (holding || $('btnMic').disabled || !sessionId || !licPassed || !voiceOn) {
+function startHold() {
+  if (holding || $('btnMic').disabled || !sessionId || !licPassed) {
     if (!licPassed) micNote('还在连接，稍等一下', true);
-    else if (!voiceOn) micNote('语音识别未配置', true);
     return;
   }
   holding = true;
   dictating = true;
-  micCap.want = true;
   $('btnMic').classList.add('rec');
   micNote('正在听…');
-  setRoomMic(false);
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: { channelCount: 1, sampleRate: 16000, echoCancellation: true, noiseSuppression: true },
-    });
-  } catch {
-    holding = false;
-    dictating = false;
-    micCap.want = false;
-    $('btnMic').classList.remove('rec');
-    micNote('麦克风不可用，检查浏览器权限', true);
-    return;
-  }
-  if (!micCap.want) {
-    stream.getTracks().forEach((t) => t.stop());
-    return;
-  }
-  try {
-    const ctx = new AudioContext({ sampleRate: 16000 });
-    const url = URL.createObjectURL(new Blob([TAP], { type: 'text/javascript' }));
-    try { await ctx.audioWorklet.addModule(url); } finally { URL.revokeObjectURL(url); }
-    const node = new AudioWorkletNode(ctx, 'tap');
-    node.port.onmessage = (e) => { if (micCap.on) micCap.chunks.push(e.data); };
-    ctx.createMediaStreamSource(stream).connect(node);
-    const mute = ctx.createGain();
-    mute.gain.value = 0;
-    node.connect(mute).connect(ctx.destination);
-    micCap.ctx = ctx;
-    micCap.stream = stream;
-    micCap.chunks = [];
-    micCap.rate = ctx.sampleRate;
-    micCap.on = true;
-    clearTimeout(micTimer);
-    micTimer = setTimeout(() => { if (holding) stopHold(); }, 55000);
-  } catch {
-    stream.getTracks().forEach((t) => t.stop());
-    holding = false;
-    dictating = false;
-    micCap.want = false;
-    $('btnMic').classList.remove('rec');
-    micNote('录音初始化失败', true);
-  }
+  setRoomMic(true);
+  sendCmd('[E]:[CMD]:[ASR_START_LONGTEXT_REC]');
+  clearTimeout(micTimer);
+  micTimer = setTimeout(() => { if (holding) stopHold(); }, 55000);
 }
 
-async function stopHold() {
-  if (!holding && !micCap.on) return;
+function stopHold() {
+  if (!holding) return;
   holding = false;
-  micCap.want = false;
-  const wasOn = micCap.on;
-  micCap.on = false;
   clearTimeout(micTimer);
   $('btnMic').classList.remove('rec');
   setRoomMic(false);
-  const { rate, chunks, ctx } = micCap;
-  micCap.chunks = [];
-  micCap.ctx = null;
-  stopMicTracks();
-  try { await ctx?.close(); } catch {}
-  if (!wasOn) {
-    dictating = false;
-    return;
-  }
-  const pcm = toPcm16(chunks || [], rate || 16000);
-  if (pcm.length < 16000 * 2 * 0.3) {
-    dictating = false;
-    micNote('说得太短，按住多说一会儿', true);
-    return;
-  }
+  sendCmd('[E]:[CMD]:[ASR_STOP_LONGTEXT_REC]');
   micNote('识别中…');
-  try {
-    const res = await fetch('/api/asr', {
-      method: 'POST',
-      headers: { 'Content-Type': 'audio/pcm;rate=16000' },
-      body: pcm,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    const text = String(data.text || '').trim();
-    if (!text) {
-      micNote('没听清，再说一次', true);
-      return;
-    }
-    $('textInput').value = '';
-    micNote('');
-    sendText(text);
-  } catch (e) {
-    micNote(e.message, true);
-  } finally {
-    dictating = false;
-  }
 }
 
 const micBtn = $('btnMic');
@@ -647,7 +539,6 @@ function fillStarters(phrases, enabled) {
 
 api('/api/config').then((cfg) => {
   const host = cfg.iotHost ? cfg.iotHost.replace(/^https?:\/\//, '') : cfg.iotMode;
-  voiceOn = !!cfg.voice;
   $('credHint').textContent = cfg.ready
     ? `正在连接 · 设备走 ${host}`
     : `还不能连接，缺 ${cfg.missing.join('、')}`;
