@@ -50,10 +50,16 @@ function categoryFor(cmd, devices) {
   return codes.size === 1 ? [...codes][0] : '';
 }
 
-/** 只补空着的 deviceName。模型已经填了的不改。 */
-export function fillTargets(list, deviceName) {
+/** 模型填了不在这户设备里的名字时，丢掉，改由原话重新匹配。 */
+export function trustedName(name, devices) {
+  const value = String(name || '');
+  return devices.some((d) => d.deviceName === value) ? value : '';
+}
+
+/** 只补空着或不在清单里的 deviceName。清单里已有的不改。 */
+export function fillTargets(list, deviceName, devices) {
   return (list || []).map((item) => (
-    item?.deviceName ? item : { ...item, deviceName }
+    item && trustedName(item.deviceName, devices || []) ? item : { ...item, deviceName }
   ));
 }
 

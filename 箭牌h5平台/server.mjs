@@ -244,6 +244,27 @@ const routes = {
     });
   },
 
+  async 'POST /api/intent'(req) {
+    const { sessionId, text } = await readBody(req);
+    const userText = String(text || '').trim();
+    if (!userText) return { status: 400, body: { error: '没有要处理的话' } };
+    const action = {
+      action: 'device.control',
+      targets: [{ deviceName: '', cmd: '', param: '', value: '' }],
+    };
+    const finished = await turn.finish({ sessionId, action, userText });
+    if (finished.cards?.length) {
+      await journal.appendTurn({ sessionId, turnId: 't_' + Date.now(), cards: finished.cards });
+    }
+    const card = finished.cards?.[0];
+    const say = card?.event === 'demo.choose'
+      ? '有多台设备符合，选一台再下发。'
+      : card?.event === 'demo.gate' && card.data?.decision === 'confirm'
+        ? '这一步需要你在页面上确认后才会发给平台。'
+        : (finished.spoken || finished.receipt || '');
+    return { cards: finished.cards || [], say };
+  },
+
   async 'POST /api/choose'(req) {
     const { sessionId, action, deviceName } = await readBody(req);
     if (!deviceName) return { status: 400, body: { error: '还没有选择设备' } };

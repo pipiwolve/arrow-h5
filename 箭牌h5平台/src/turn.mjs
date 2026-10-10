@@ -1,7 +1,7 @@
 // 一轮字幕收尾：从回答里取动作，过闸门，放行的才打到 IoT。
 // 高危动作停在待确认，等 /api/confirm。
 
-import { completeList, fillTargets, narrowDevices } from './resolve.mjs';
+import { completeList, fillTargets, narrowDevices, trustedName } from './resolve.mjs';
 
 export function createTurn({ scenario, devices, gate, iot, audit, liveDevices }) {
   function execControl(rec) {
@@ -94,6 +94,11 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
 
     const completed = completeAction(action, input.userText);
     const chosen = await chooseDevice(completed, input.userText);
+    if (chosen.none) {
+      const say = '名下没有对得上的设备，这一次没有下发。';
+      cards.push({ event: 'demo.gate', data: { decision: 'deny', level: 'X', reasons: [say] } });
+      return { cards, spoken: say, receipt: say };
+    }
     if (chosen.choices) {
       cards.push({
         event: 'demo.choose',
@@ -138,8 +143,9 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
     const lists = action.action === 'scene.create'
       ? [action.actionList]
       : action.action === 'device.control' ? [action.targets] : [];
-    const missing = lists.flat().some((item) => item && !item.deviceName);
-    if (!missing) return { action };
+    const known = (name) => trustedName(name, devices);
+    const needsPick = lists.flat().some((item) => item && !known(item.deviceName));
+    if (!needsPick) return { action };
     const live = liveDevices ? await liveDevices(false) : { rows: [] };
     const cmd = lists.flat().find((item) => item?.cmd)?.cmd || '';
     const choices = narrowDevices({ devices, live, userText, cmd });
@@ -148,13 +154,13 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
       return {
         action: {
           ...action,
-          targets: fillTargets(action.targets, name),
-          actionList: fillTargets(action.actionList, name),
+          targets: fillTargets(action.targets, name, devices),
+          actionList: fillTargets(action.actionList, name, devices),
         },
       };
     }
     if (choices.length > 1) return { action, choices };
-    return { action };
+    return { action, none: true };
   }
 
   async function confirm({ sessionId, pendingId, decision }) {

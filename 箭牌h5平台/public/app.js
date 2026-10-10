@@ -100,6 +100,7 @@ function addCard(card) {
   if (card.event === 'demo.gate') {
     el.innerHTML = `<div class="lv">${data.level || ''} · ${DECISION_LABEL[decision] || decision}</div><div>${(data.reasons || []).join('；') || data.say || ''}</div>`;
     if (decision === 'confirm' && data.pendingId) {
+      turnBusy = true;
       const row = document.createElement('div');
       row.className = 'actions';
       const ok = document.createElement('button');
@@ -120,6 +121,7 @@ function addCard(card) {
     const label = RESULT_LABEL[data.result] || data.result || '';
     el.innerHTML = `<div class="lv">${label}</div><div>${msg}</div>`;
   } else if (card.event === 'demo.choose') {
+    turnBusy = true;
     el.innerHTML = `<div class="lv">选择设备</div><div>${data.say || '有多台设备符合，选一台再下发。'}</div>`;
     const row = document.createElement('div');
     row.className = 'actions';
@@ -148,6 +150,7 @@ function addCard(card) {
 }
 
 async function chooseDevice(action, deviceName, el) {
+  turnBusy = true;
   const out = await api('/api/choose', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -155,6 +158,7 @@ async function chooseDevice(action, deviceName, el) {
   });
   el.remove();
   for (const card of out.cards || []) addCard(card);
+  if (!document.querySelector('.card.confirm, .card.choose')) turnBusy = false;
 }
 
 async function confirm(pendingId, decision, el) {
@@ -165,6 +169,7 @@ async function confirm(pendingId, decision, el) {
   });
   el.querySelector('.actions')?.remove();
   for (const card of out.cards || []) addCard(card);
+  turnBusy = false;
 }
 
 async function onAgentFrame(msg) {
@@ -430,7 +435,11 @@ function clearThinking() {
 }
 
 function showRepair() {
-  addBubble('agent', '已准备好报修入口。');
+  const say = '已准备好报修入口。';
+  addBubble('agent', say);
+  if (typeof window.BRTC_SendMessageToUser === 'function') {
+    window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + say);
+  }
   addCard({
     event: 'demo.repair',
     data: {
@@ -441,6 +450,16 @@ function showRepair() {
   });
 }
 
+function showIntent(out) {
+  if (out.say) {
+    addBubble('agent', out.say);
+    if (typeof window.BRTC_SendMessageToUser === 'function') {
+      window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + out.say);
+    }
+  }
+  for (const card of out.cards || []) addCard(card);
+}
+
 async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
@@ -449,16 +468,25 @@ async function sendText(text) {
     showRepair();
     return;
   }
-  if (turnBusy || typeof window.BRTC_SendMessageToUser !== 'function') return;
-  turnBusy = true;
-  let payload = value;
   if (OPERATE.test(value)) {
+    addBubble('user', value);
     try {
-      const roster = await api('/api/roster');
-      if (roster.text) payload = value + '\n' + roster.text;
-    } catch {}
+      showIntent(await api('/api/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, text: value }),
+      }));
+    } catch (e) {
+      addBubble('agent', e.message);
+    }
+    return;
   }
-  window.BRTC_SendMessageToUser('[T]:' + payload);
+  if (turnBusy || typeof window.BRTC_SendMessageToUser !== 'function') {
+    micNote('上一条还没结束', true);
+    return;
+  }
+  turnBusy = true;
+  window.BRTC_SendMessageToUser('[T]:' + value);
   sentText = value;
   lastAsk = value;
   userBubble = addBubble('user', value);

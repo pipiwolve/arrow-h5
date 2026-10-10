@@ -4,7 +4,7 @@ import { SCENARIO, DEVICES } from '../scenario.mjs';
 import { createGate } from './policy.mjs';
 import { actionFromCall, extractAction, classifyFrame, functionResultFrame, parseFunction } from './frames.mjs';
 import { buildRole, userEcho, visibleReply } from './roster.mjs';
-import { completeItem, narrowDevices } from './resolve.mjs';
+import { completeItem, fillTargets, narrowDevices, trustedName } from './resolve.mjs';
 import { agentConfig, licActiveFrame } from './aiagent.mjs';
 import { createTurn } from './turn.mjs';
 
@@ -174,5 +174,34 @@ const rejected = await failing.finish({
 });
 assert.equal(rejected.cards.at(-1).data.result, 'FAILED');
 assert.equal(rejected.receipt.includes('离线'), true);
+
+assert.equal(trustedName('不存在的设备', DEVICES.devices), '');
+assert.equal(trustedName('ARROWToilet17419421020631', DEVICES.devices), 'ARROWToilet17419421020631');
+const pickedToilet = await turn.finish({
+  sessionId: 'hs_pick',
+  userText: '把主卫坐便器的大冲打开',
+  action: {
+    action: 'device.control',
+    targets: [{ deviceName: '', cmd: 'switch_watering', param: 'switch', value: 'on' }],
+  },
+});
+assert.equal(pickedToilet.cards[0].event, 'demo.choose');
+assert.equal(pickedToilet.cards[0].data.choices.length, 2);
+assert.equal(pickedToilet.cards[0].data.choices.every((d) => d.room === '主卫'), true);
+const unknownName = await turn.finish({
+  sessionId: 'hs_unknown',
+  userText: '把主卫坐便器的大冲打开',
+  action: {
+    action: 'device.control',
+    targets: [{ deviceName: '请填写设备名称', cmd: 'switch_watering', param: 'switch', value: 'on' }],
+  },
+});
+assert.equal(unknownName.cards[0].event, 'demo.choose');
+const filledName = fillTargets(
+  [{ deviceName: '不存在', cmd: 'switch_watering', param: 'switch', value: 'on' }],
+  'ARROWToilet17419421020631',
+  DEVICES.devices,
+);
+assert.equal(filledName[0].deviceName, 'ARROWToilet17419421020631');
 
 console.log('selfcheck ok');
