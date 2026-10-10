@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>箭牌 H5 验收</title>
+</head>
+<body>
+<pre id="out">running</pre>
+<script type="module">
+import { userEcho, visibleReply } from '../src/roster.mjs';
+
+const lines = [];
+const ok = (name, cond) => lines.push((cond ? 'PASS' : 'FAIL') + '  ' + name);
+const same = (a, b) => String(a || '').replace(/\s+/g, '') === String(b || '').replace(/\s+/g, '');
+
+const ROSTER_MARK = '【家庭设备】';
+function pageVisible(text, userText) {
+  let src = String(text || '').trim();
+  const at = src.indexOf(ROSTER_MARK);
+  if (at >= 0) src = src.slice(0, at).trim();
+  if (userText && same(src, userText)) return '';
+  return src;
+}
+function pageEcho(text, sent) {
+  let src = String(text || '').trim();
+  const at = src.indexOf(ROSTER_MARK);
+  if (at >= 0) src = src.slice(0, at).trim();
+  if (!sent) return { text: src, echo: false };
+  const got = src.replace(/\s+/g, '');
+  const want = String(sent).replace(/\s+/g, '');
+  return { text: src, echo: got === want || (want.startsWith(got) && got.length > 0) };
+}
+
+const roster = '【家庭设备】下面是本轮设备事实，只用于选择 deviceName。\n- 客卫 马桶 ARROWToilet17332949200780 离线\nswitch_watering,switch_night_light,switch_auto_closing';
+const ask = '把主卫的浴缸进水打开';
+const replay = ask + '\n' + roster;
+
+ok('服务端截掉助手照抄的清单', visibleReply('好的。\n' + roster, ask) === '好的。');
+ok('服务端丢掉只剩原话的复读', visibleReply(ask + '\n' + roster, ask) === '');
+ok('服务端回声对上原话且不含设备号', userEcho(replay, ask).echo && userEcho(replay, ask).text === ask && !userEcho(replay, ask).text.includes('ARROW'));
+ok('页面过滤与服务端一致', pageVisible('好的。\n' + roster, ask) === visibleReply('好的。\n' + roster, ask));
+ok('页面回声与服务端一致', JSON.stringify(pageEcho(replay, ask)) === JSON.stringify(userEcho(replay, ask)));
+
+const stream = document.createElement('div');
+document.body.append(stream);
+let sentText = ask;
+let userBubble = document.createElement('div');
+userBubble.className = 'bubble user';
+userBubble.textContent = ask;
+userBubble.dataset.local = '1';
+stream.append(userBubble);
+
+function onQ(raw, partial) {
+  const text = raw.replace(/^\[Q\]:/, '').replace(/^\[M\]:?/, '');
+  if (sentText && userBubble?.dataset.local) {
+    const echo = pageEcho(text, sentText);
+    if (echo.echo) {
+      if (same(echo.text, sentText)) userBubble.textContent = sentText;
+      if (!partial && same(echo.text, sentText)) {
+        sentText = '';
+        userBubble = null;
+      }
+      return;
+    }
+  }
+  const spoken = pageEcho(text, '').text;
+  if (!spoken) return;
+  const el = document.createElement('div');
+  el.className = 'bubble user';
+  el.textContent = spoken;
+  stream.append(el);
+}
+
+onQ('[Q]:[M]:' + ask.slice(0, 4), true);
+onQ('[Q]:' + replay, false);
+ok('回放后仍只有一条用户气泡', stream.querySelectorAll('.bubble.user').length === 1);
+ok('用户气泡不含清单', !stream.textContent.includes('家庭设备') && !stream.textContent.includes('ARROW'));
+ok('用户气泡保留原话', stream.textContent === ask);
+
+const input = document.createElement('input');
+const mic = document.createElement('button');
+const send = document.createElement('button');
+input.disabled = mic.disabled = send.disabled = true;
+ok('未连接时输入不可用', input.disabled && mic.disabled && send.disabled);
+input.disabled = mic.disabled = send.disabled = false;
+let holding = false;
+let dictating = false;
+let filled = '';
+function startHold() {
+  if (holding || mic.disabled) return;
+  holding = true;
+  dictating = true;
+}
+function stopHold() {
+  if (!holding) return;
+  holding = false;
+}
+function onDictation(raw) {
+  const partial = raw.includes('[M]');
+  const text = raw.replace(/^\[Q\]:/, '').replace(/^\[M\]:?/, '');
+  if (!dictating) return;
+  if (text) filled = text;
+  if (!partial) dictating = false;
+}
+startHold();
+ok('按住后进入听写', holding && dictating);
+onDictation('[Q]:[M]:我家坐便器');
+ok('听写中间态只进输入框不进对话', filled === '我家坐便器' && dictating);
+stopHold();
+onDictation('[Q]:我家坐便器不出水了，要报修');
+ok('松手后最终句回填且不再听写', filled === '我家坐便器不出水了，要报修' && !dictating && !holding);
+ok('听写没有新增气泡', stream.querySelectorAll('.bubble').length === 1);
+
+const box = document.createElement('textarea');
+box.value = '普通问候，不操作设备';
+ok('文本框可写入', box.value.length > 0);
+const operate = /打开|关闭|开一下|关一下|冲水|大冲|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
+ok('操作句会附清单', operate.test(ask));
+ok('普通问候不附清单', !operate.test('你好'));
+ok('报修句会附清单', operate.test(filled));
+
+const failed = lines.filter((l) => l.startsWith('FAIL'));
+document.getElementById('out').textContent = lines.join('\n') + '\n\n' + (failed.length ? failed.length + ' failed' : 'ALL PASS');
+document.title = failed.length ? 'FAIL' : 'PASS';
+</script>
+</body>
+</html>

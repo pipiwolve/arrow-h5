@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "IoT 调用与使用时长",
+    "locale": "zh-CN",
+    "output": "docs/topic-openai-dumate.html",
+    "viewBox": [980, 980],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "views": [
+      { "id": "hit", "label": "话题命中", "focus": ["user", "brtc"], "note": "调用次数或使用时长的例句命中后，才按 OpenAI 格式外呼。" },
+      { "id": "convert", "label": "格式转换", "focus": ["brtc", "adapter"], "note": "适配层认 Bearer、model 和最后一条 user 消息。" },
+      { "id": "dumate", "label": "DuMate 一轮", "focus": ["adapter", "dumate"], "note": "建会话、订阅、发 user.message，再从助手正文取回结果。" }
+    ]
+  },
+  "participants": [
+    { "id": "user", "type": "external", "label": "用户", "sublabel": "H5 语音" },
+    { "id": "brtc", "type": "cloud", "label": "BRTC 话题", "sublabel": "OpenAI 接口规范" },
+    { "id": "adapter", "type": "backend", "label": "适配层", "sublabel": "POST /v1/chat/completions" },
+    { "id": "dumate", "type": "external", "label": "DuMate", "sublabel": "Agent API" }
+  ],
+  "segments": [
+    { "from": 160, "to": 230, "label": "命中话题" },
+    { "from": 250, "to": 340, "label": "OpenAI 一次请求" },
+    { "from": 360, "to": 770, "label": "DuMate 会话" }
+  ],
+  "messages": [
+    { "id": "speak", "from": "user", "to": "brtc", "y": 180, "label": "问调用次数或使用时长", "variant": "default" },
+    { "id": "post", "from": "brtc", "to": "adapter", "y": 245, "label": "POST /v1/chat/completions", "variant": "emphasis" },
+    { "id": "key", "from": "brtc", "to": "adapter", "y": 295, "label": "Bearer 话题 API Key", "variant": "security" },
+    { "id": "create", "from": "adapter", "to": "dumate", "y": 390, "label": "POST /sessions", "variant": "default" },
+    { "id": "sid", "from": "dumate", "to": "adapter", "y": 430, "label": "返回 ses_ 会话", "variant": "return" },
+    { "id": "sse", "from": "adapter", "to": "dumate", "y": 475, "label": "GET events/stream", "variant": "default" },
+    { "id": "connected", "from": "dumate", "to": "adapter", "y": 520, "label": "server.connected", "variant": "return" },
+    { "id": "message", "from": "adapter", "to": "dumate", "y": 570, "label": "POST events user.message", "variant": "emphasis" },
+    { "id": "empty", "from": "dumate", "to": "adapter", "y": 615, "label": "HTTP 204 空响应", "variant": "return" },
+    { "id": "idle", "from": "dumate", "to": "adapter", "y": 660, "label": "status 回到 idle", "variant": "return" },
+    { "id": "history", "from": "adapter", "to": "dumate", "y": 705, "label": "GET events 取助手正文", "variant": "default" },
+    { "id": "text", "from": "dumate", "to": "adapter", "y": 750, "label": "role=assistant 的文本", "variant": "return" },
+    { "id": "wrap", "from": "adapter", "to": "brtc", "y": 810, "label": "chat.completion JSON", "variant": "return" },
+    { "id": "speakback", "from": "brtc", "to": "user", "y": 860, "label": "播报这一句结论", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "brtc", "from": 180, "to": 868, "type": "cloud" },
+    { "participant": "adapter", "from": 240, "to": 818, "type": "backend" },
+    { "participant": "dumate", "from": 385, "to": 758, "type": "external" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "表单只填四项",
+      "items": [
+        "服务请求地址指向适配层 /v1/chat/completions",
+        "两个话题共用适配层，Model ID 分别是 iot_calls 与 usage_duration",
+        "API Key 是适配层自己的 Key，不是 DuMate Key",
+        "系统人设可留空，人设已经在 DuMate Agent 上"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "回答不能取最长文本",
+      "items": [
+        "发消息的 HTTP 204 里没有回答",
+        "用户原话也会出现在事件流里",
+        "只取 role=assistant 的最后一条正文",
+        "适配层按 model 选统计口径，语音只播一句结论"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "还差公网这一跳",
+      "items": [
+        "本地调用方和适配层已经对通过",
+        "BRTC 云端访问不到 127.0.0.1",
+        "适配层需要公网 HTTPS 后再挂进模板",
+        "完整报表留在 Session，语音只播一句"
+      ]
+    }
+  ]
+}

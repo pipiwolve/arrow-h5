@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>箭牌智家 AI 助手</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <img class="logo" src="logo-dark.png" alt="ARROW 箭牌家居">
+    </div>
+    <nav class="nav" id="nav" aria-label="页面">
+      <button type="button" data-view="call" class="on">通话</button>
+      <button type="button" data-view="devices"><span class="wide">家庭设备</span><span class="short">设备</span></button>
+      <button type="button" data-view="audit"><span class="wide">安全审计</span><span class="short">审计</span></button>
+    </nav>
+    <p class="hint" id="credHint">正在检查鉴权配置…</p>
+  </aside>
+
+  <main>
+    <section class="view on" id="view-call">
+      <header class="chat-head">
+        <img class="mark" src="favicon.png" alt="">
+        <h1 id="callTitle">箭牌智能AI助手</h1>
+      </header>
+      <div class="status" id="status" hidden>空闲</div>
+      <div class="stage" aria-label="音视频" hidden>
+        <div id="therevideo"></div>
+        <div id="herevideo"></div>
+      </div>
+      <div class="stream" id="stream" aria-live="polite"></div>
+      <div class="dock" id="dock">
+        <form class="composer" id="textForm">
+          <label class="sr" for="textInput">发给智能体的文字</label>
+          <input id="textInput" placeholder="请输入消息" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="send" disabled>
+          <button type="button" id="btnMic" disabled aria-label="按住说话" title="按住说话">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
+          </button>
+          <button type="submit" disabled id="textSend" aria-label="发送">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 11.2 20 4.2c.7-.3 1.4.4 1.1 1.1l-7 16.6c-.3.7-1.3.6-1.5-.1l-2.1-7.2-7.2-2.1c-.7-.2-.8-1.2-.1-1.5Z"/></svg>
+          </button>
+        </form>
+        <p class="composer-note" id="composerNote" hidden></p>
+      </div>
+    </section>
+
+    <section class="view" id="view-devices">
+      <header class="top">
+        <h1>家庭设备</h1>
+        <button type="button" id="btnDev" class="mini">刷新</button>
+      </header>
+      <div class="pane" id="devPane"></div>
+    </section>
+
+    <section class="view" id="view-audit">
+      <header class="top">
+        <h1>安全审计</h1>
+        <button type="button" id="btnAudit" class="mini">刷新</button>
+      </header>
+      <div class="pane" id="auditPane"></div>
+    </section>
+  </main>
+</div>
+<script src="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

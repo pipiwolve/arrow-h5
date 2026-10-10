@@ -1,0 +1,85 @@
+// 模型没填 deviceName 时，用设备列表和用户原话收窄到一台。
+// 多台都对得上就返回 choices，由页面让用户点。deviceName 只取列表里的值。
+
+const CATEGORY = { '01': '马桶', '04': '浴缸', '06': '镜柜' };
+const HINTS = [
+  [/坐便器|马桶|大冲/, '01'],
+  [/浴缸|进水|放水/, '04'],
+  [/镜柜|夜灯/, '06'],
+];
+// 说法能唯一对上指令表才补。只说「打开」时马桶有多条指令，不猜。
+const COMMAND_HINTS = [
+  [/大冲|冲水/, 'switch_watering'],
+  [/夜灯/, 'switch_night_light'],
+  [/翻盖/, 'switch_auto_closing'],
+  [/脚触/, 'switch_kicking'],
+  [/润瓷/, 'switch_auto_oiling_porcelain'],
+  [/进水|放水/, 'switch_water_in'],
+];
+
+export function narrowDevices({ devices, live, userText, cmd }) {
+  const rows = Array.isArray(live?.rows) && live.rows.length ? live.rows : devices;
+  const text = String(userText || '');
+  const room = /主卫/.test(text) ? '主卫' : /客卫/.test(text) ? '客卫' : '';
+  const hinted = HINTS.find(([re]) => re.test(text))?.[1] || '';
+  const specCategory = cmd ? categoryFor(cmd, devices) : '';
+  const category = hinted || specCategory;
+  const matched = rows.filter((row) => {
+    const known = devices.find((d) => d.deviceName === row.deviceName) || row;
+    if (room && known.room && known.room !== room) return false;
+    if (category && known.categoryCode && known.categoryCode !== category) return false;
+    if (cmd && Array.isArray(known.capability) && !known.capability.includes(cmd)) return false;
+    return true;
+  });
+  return matched.map((row) => {
+    const known = devices.find((d) => d.deviceName === row.deviceName) || {};
+    return {
+      deviceName: row.deviceName,
+      deviceTagName: row.deviceTagName || known.deviceTagName || '',
+      room: known.room || '',
+      category: CATEGORY[row.categoryCode || known.categoryCode] || '',
+      onlineStatus: row.onlineStatus ? 1 : 0,
+    };
+  });
+}
+
+function categoryFor(cmd, devices) {
+  const codes = new Set(
+    devices.filter((d) => (d.capability || []).includes(cmd)).map((d) => d.categoryCode),
+  );
+  return codes.size === 1 ? [...codes][0] : '';
+}
+
+/** 只补空着的 deviceName。模型已经填了的不改。 */
+export function fillTargets(list, deviceName) {
+  return (list || []).map((item) => (
+    item?.deviceName ? item : { ...item, deviceName }
+  ));
+}
+
+export function commandFromText(text, commands) {
+  const known = new Set((commands || []).map((c) => c.cmd));
+  const cmd = COMMAND_HINTS.find(([re]) => re.test(String(text || '')))?.[1] || '';
+  return known.has(cmd) ? cmd : '';
+}
+
+export function valueFromText(text) {
+  const src = String(text || '');
+  if (/关闭|关掉|关上/.test(src)) return 'off';
+  if (/打开|开一下|开启/.test(src)) return 'on';
+  return '';
+}
+
+/** 补空着的 cmd、param、value。模型已经填了的不改，对不上的留空给闸门拒绝。 */
+export function completeItem(item, userText, commands) {
+  if (!item) return item;
+  const next = { ...item };
+  if (!next.cmd) next.cmd = commandFromText(userText, commands);
+  if (!next.param) next.param = 'switch';
+  if (!next.value) next.value = valueFromText(userText);
+  return next;
+}
+
+export function completeList(list, userText, commands) {
+  return (list || []).map((item) => completeItem(item, userText, commands));
+}
