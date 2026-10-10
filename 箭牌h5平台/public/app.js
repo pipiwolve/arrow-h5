@@ -544,19 +544,38 @@ window.visualViewport?.addEventListener('resize', pinKeyboard);
 window.visualViewport?.addEventListener('scroll', pinKeyboard);
 window.addEventListener('pagehide', () => { stopCall(); });
 
-function fillStarters(phrases, enabled) {
-  const row = document.createElement('div');
-  row.className = 'prompts';
-  for (const phrase of phrases || []) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = phrase;
-    btn.disabled = !enabled;
-    btn.onclick = () => sendText(phrase);
-    row.append(btn);
+function fillStarters(items, enabled) {
+  const wrap = document.createElement('div');
+  wrap.className = 'prompts';
+  const groups = new Map();
+  for (const item of items || []) {
+    const text = typeof item === 'string' ? item : item.text;
+    const group = typeof item === 'string' ? '' : (item.group || '');
+    if (!text) continue;
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(text);
   }
-  $('stream').append(row);
-  return row;
+  for (const [group, phrases] of groups) {
+    const block = document.createElement('div');
+    block.className = 'prompt-group';
+    if (group) {
+      const label = document.createElement('p');
+      label.className = 'prompt-label';
+      label.textContent = group;
+      block.append(label);
+    }
+    for (const phrase of phrases) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = phrase;
+      btn.disabled = !enabled;
+      btn.onclick = () => sendText(phrase);
+      block.append(btn);
+    }
+    wrap.append(block);
+  }
+  $('stream').append(wrap);
+  return wrap;
 }
 
 api('/api/config').then((cfg) => {
