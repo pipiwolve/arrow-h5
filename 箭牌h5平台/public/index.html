@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>箭牌智家 AI 助手</title>
 <link rel="icon" href="favicon.png">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 <link rel="prefetch" href="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js" as="script">
 </head>
 <body>
@@ -46,9 +46,13 @@
         <form class="composer" id="textForm">
           <label class="sr" for="textInput">发给智能体的文字</label>
           <input id="textInput" placeholder="请输入消息" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="send" disabled>
+          <span class="mic">
           <button type="button" id="btnMic" disabled aria-label="按住说话" title="按住说话">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"/></svg>
           </button>
+          <i class="wave"></i>
+          <i class="wave"></i>
+          </span>
           <button type="submit" disabled id="textSend" aria-label="发送">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.4 11.2 20 4.2c.7-.3 1.4.4 1.1 1.1l-7 16.6c-.3.7-1.3.6-1.5-.1l-2.1-7.2-7.2-2.1c-.7-.2-.8-1.2-.1-1.5Z"/></svg>
           </button>
@@ -74,7 +78,7 @@
     </section>
   </main>
 </div>
-<script src="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js"></script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=11"></script>
+<script src="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js" async></script>
 </body>
 </html>

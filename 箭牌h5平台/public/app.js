@@ -3,6 +3,7 @@
 
 const $ = (id) => document.getElementById(id);
 let sessionId = null;
+let licFrame = '';
 let agentBuf = '';
 let agentBubble = null;
 let userBubble = null;
@@ -176,6 +177,10 @@ async function onAgentFrame(msg) {
   const data = msg?.data || '';
   if (data.startsWith('[E]:[LIC]:[MUST]')) {
     setStatus('正在激活授权');
+    if (licFrame) {
+      window.BRTC_SendMessageToUser(licFrame);
+      return;
+    }
     const out = await api('/api/session/lic', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -234,20 +239,7 @@ async function onAgentFrame(msg) {
     // 按住说话时，房间 ASR 的中间态和最终句都回填输入框，不进对话。
     // 最终句可能晚于松手到达，所以用 dictating 守住这一轮。
     if (dictating) {
-      if (!partial) {
-        dictating = false;
-        const spoken = userEcho(text, '').text;
-        $('textInput').value = '';
-        if (spoken) {
-          micNote('');
-          sentText = spoken;
-          lastAsk = spoken;
-          userBubble = addBubble('user', spoken);
-          userBubble.dataset.local = '1';
-        } else {
-          micNote('没听清，再说一次', true);
-        }
-      }
+      if (!partial) finishDictation(userEcho(text, '').text);
       return;
     }
     // 文字和快捷句已经在本地画过。房间回放整段 [T]，含设备清单。
@@ -371,6 +363,7 @@ async function startCall() {
       body: JSON.stringify({ title: '箭牌对话' }),
     });
     sessionId = opened.session.id;
+    licFrame = opened.licFrame || '';
     unlockComposer();
     if (typeof window.BRTC_Start !== 'function') {
       setStatus('BRTC SDK 未加载，连接未建立');
@@ -397,6 +390,7 @@ async function stopCall() {
     try { await api('/api/session/stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) }); } catch {}
   }
   sessionId = null;
+  licFrame = '';
 }
 
 $('prompts').onclick = (e) => {
@@ -560,6 +554,27 @@ $('btnDev').onclick = loadDevices;
 $('btnAudit').onclick = loadAudit;
 
 let micTimer = 0;
+let micStopTimer = 0;
+let heard = false;
+const MISHEARD = /没有听清|没听清|没有听清楚|请再说一遍/;
+
+function asrUtterance(text) {
+  const value = String(text || '').trim();
+  if (!value || MISHEARD.test(value)) return '';
+  return value;
+}
+
+function finishDictation(text) {
+  dictating = false;
+  const spoken = asrUtterance(text);
+  if (!spoken) {
+    micNote('没听清，按住说完再松开', true);
+    return;
+  }
+  heard = true;
+  micNote('');
+  sendText(spoken);
+}
 
 function micNote(text, err) {
   const el = $('composerNote');
@@ -575,10 +590,15 @@ function startHold() {
   }
   holding = true;
   dictating = true;
+  heard = false;
   $('btnMic').classList.add('rec');
   micNote('正在听…');
+  clearTimeout(micStopTimer);
   setRoomMic(true);
-  sendCmd('[E]:[CMD]:[ASR_START_LONGTEXT_REC]');
+  // 先打开麦克风，再开始识别。反过来房间会录到一段静音。
+  micStopTimer = setTimeout(() => {
+    if (holding) sendCmd('[E]:[CMD]:[ASR_START_LONGTEXT_REC]');
+  }, 200);
   clearTimeout(micTimer);
   micTimer = setTimeout(() => { if (holding) stopHold(); }, 55000);
 }
@@ -587,10 +607,13 @@ function stopHold() {
   if (!holding) return;
   holding = false;
   clearTimeout(micTimer);
+  clearTimeout(micStopTimer);
   $('btnMic').classList.remove('rec');
-  setRoomMic(false);
   sendCmd('[E]:[CMD]:[ASR_STOP_LONGTEXT_REC]');
   micNote('识别中…');
+  // 先结束识别，再关麦克风，避免尾音被截掉。
+  micStopTimer = setTimeout(() => { if (!holding) setRoomMic(false); }, 600);
+  setTimeout(() => { if (dictating && !heard) finishDictation(''); }, 8000);
 }
 
 const micBtn = $('btnMic');
@@ -606,7 +629,6 @@ micBtn.addEventListener('pointerup', (e) => {
   stopHold();
 });
 micBtn.addEventListener('pointercancel', () => { if (holding) stopHold(); });
-micBtn.addEventListener('lostpointercapture', () => { if (holding) stopHold(); });
 micBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 window.addEventListener('blur', () => { if (holding) stopHold(); });
 

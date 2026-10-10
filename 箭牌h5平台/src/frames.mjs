@@ -151,6 +151,15 @@ export function extractAction(text) {
   return { action: null, clean: src.trim() };
 }
 
+const MISHEARD = /没有听清|没听清|没有听清楚|请再说一遍/;
+
+/** 房间没录到声音时会把这句当成识别结果。这种结果不进入对话。 */
+export function asrUtterance(text) {
+  const value = String(text || '').trim();
+  if (!value || MISHEARD.test(value)) return '';
+  return value;
+}
+
 function tidy(text) {
   return String(text).replace(/\n{3,}/g, '\n\n').trim();
 }

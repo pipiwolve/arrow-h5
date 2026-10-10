@@ -44,9 +44,10 @@ export function createSessions({ brtc, scenario, store }) {
     live.set(id, rec);
     const state = await store.readJson({ sessions: [] });
     state.sessions = [{ ...publicView(rec) }, ...(state.sessions || [])].slice(0, 40);
-    await store.writeJson(state);
+    store.writeJson(state).catch(() => {});
     return {
       session: publicView(rec),
+      licFrame: licActiveFrame({ devId: rec.devId, licKey: brtc.licKey }),
       // 进房参数。token 是这一次通话的房间凭证，不是账号 SK。
       join: {
         appid: call.appid,
