@@ -13,6 +13,7 @@ let licPassed = false;
 let holding = false;
 let dictating = false;
 let lastAsk = '';
+let turnBusy = false;
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
@@ -208,11 +209,12 @@ async function onAgentFrame(msg) {
       window.BRTC_SendMessageToUser(finished.reply);
     }
     for (const card of finished.cards || []) {
-      if (card.event === 'demo.repair' && document.querySelector('.card a[href="' + REPAIR_LINK + '"]')) continue;
+      if (card.event === 'demo.repair') continue;
       addCard(card);
     }
     const spoken = String(finished.reply || '').match(/"content":"([^"]*)"/);
     if (spoken?.[1]) paintAgent(spoken[1]);
+    turnBusy = false;
     return;
   }
   if (!data.startsWith('[A]:') && !data.startsWith('[Q]:')) return;
@@ -289,7 +291,11 @@ async function onAgentFrame(msg) {
   paintAgent(finished.parsed?.text || '');
   agentBubble = null;
   lastAsk = '';
-  for (const card of finished.cards || []) addCard(card);
+  turnBusy = false;
+  for (const card of finished.cards || []) {
+    if (card.event === 'demo.repair') continue;
+    addCard(card);
+  }
 }
 
 function sendCmd(frame) {
@@ -423,9 +429,28 @@ function clearThinking() {
   }
 }
 
+function showRepair() {
+  addBubble('agent', '已准备好报修入口。');
+  addCard({
+    event: 'demo.repair',
+    data: {
+      title: '报修',
+      body: '助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。',
+      deeplink: REPAIR_LINK,
+    },
+  });
+}
+
 async function sendText(text) {
   const value = String(text || '').trim();
-  if (!value || !sessionId || typeof window.BRTC_SendMessageToUser !== 'function') return;
+  if (!value || !sessionId) return;
+  if (REPAIR.test(value)) {
+    addBubble('user', value);
+    showRepair();
+    return;
+  }
+  if (turnBusy || typeof window.BRTC_SendMessageToUser !== 'function') return;
+  turnBusy = true;
   let payload = value;
   if (OPERATE.test(value)) {
     try {
@@ -439,16 +464,7 @@ async function sendText(text) {
   userBubble = addBubble('user', value);
   userBubble.dataset.local = '1';
   if (STATS.test(value)) showThinking();
-  if (REPAIR.test(value)) {
-    addCard({
-      event: 'demo.repair',
-      data: {
-        title: '报修',
-        body: '助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。',
-        deeplink: REPAIR_LINK,
-      },
-    });
-  }
+  setTimeout(() => { turnBusy = false; }, 20000);
 }
 
 $('textForm').onsubmit = (e) => {
