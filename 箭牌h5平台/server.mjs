@@ -298,7 +298,11 @@ function serveStatic(req, res, pathname) {
     sendJson(res, 404, { error: 'not found' });
     return;
   }
-  res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+  const ext = path.extname(file);
+  res.writeHead(200, {
+    'Content-Type': TYPES[ext] || 'application/octet-stream',
+    'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=604800',
+  });
   fs.createReadStream(file).pipe(res);
 }
 

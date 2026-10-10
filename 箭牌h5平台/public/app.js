@@ -178,6 +178,7 @@ async function onAgentFrame(msg) {
     const passed = data.includes('[PASS]');
     licPassed = passed;
     setStatus(passed ? '已连接' : '授权未通过');
+    if (passed) armSound();
     return;
   }
   if (data.startsWith('[F]:')) {
@@ -279,6 +280,27 @@ function setRoomMic(on) {
   if (typeof window.BRTC_MuteMicphone === 'function') window.BRTC_MuteMicphone(!on);
 }
 
+let soundOn = false;
+
+function unlockSound() {
+  if (soundOn) return;
+  soundOn = true;
+  const root = $('therevideo');
+  root?.querySelectorAll('audio,video').forEach((el) => {
+    el.muted = false;
+    el.volume = 1;
+    el.play?.().catch(() => {});
+  });
+}
+
+function armSound() {
+  const once = () => {
+    unlockSound();
+    document.removeEventListener('pointerdown', once, true);
+  };
+  document.addEventListener('pointerdown', once, true);
+}
+
 function startRtc(join) {
   window.BRTC_Start(Object.assign({}, join, {
     aspublisher: true,
@@ -289,7 +311,7 @@ function startRtc(join) {
     autopublish: true,
     userevent: true,
     sessionevent: true,
-    autoplaymuted: false,
+    autoplaymuted: true,
     success: () => {
       setStatus('已进房，等待授权');
       setRoomMic(false);
@@ -538,10 +560,7 @@ function fillStarters(phrases, enabled) {
 }
 
 api('/api/config').then((cfg) => {
-  const host = cfg.iotHost ? cfg.iotHost.replace(/^https?:\/\//, '') : cfg.iotMode;
-  $('credHint').textContent = cfg.ready
-    ? `正在连接 · 设备走 ${host}`
-    : `还不能连接，缺 ${cfg.missing.join('、')}`;
+  $('credHint').textContent = cfg.ready ? '' : `还不能连接，缺 ${cfg.missing.join('、')}`;
   fillStarters(cfg.starters, false);
   if (cfg.ready) startCall();
 }).catch((e) => { $('credHint').textContent = e.message; });
