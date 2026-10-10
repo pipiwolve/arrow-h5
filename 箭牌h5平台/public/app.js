@@ -207,7 +207,10 @@ async function onAgentFrame(msg) {
     if (finished.reply && typeof window.BRTC_SendMessageToUser === 'function') {
       window.BRTC_SendMessageToUser(finished.reply);
     }
-    for (const card of finished.cards || []) addCard(card);
+    for (const card of finished.cards || []) {
+      if (card.event === 'demo.repair' && document.querySelector('.card a[href="' + REPAIR_LINK + '"]')) continue;
+      addCard(card);
+    }
     const spoken = String(finished.reply || '').match(/"content":"([^"]*)"/);
     if (spoken?.[1]) paintAgent(spoken[1]);
     return;
@@ -401,6 +404,8 @@ $('nav').onclick = (e) => {
 };
 
 const OPERATE = /打开|关闭|开一下|关一下|冲水|大冲|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
+const REPAIR = /报修|维修/;
+const REPAIR_LINK = 'arrowhome://repair/create?from=ai_assistant';
 const STATS = /多少次|几次|用得最久|使用时长|用了多久|统计|调用|失败了/;
 
 function showThinking() {
@@ -434,6 +439,16 @@ async function sendText(text) {
   userBubble = addBubble('user', value);
   userBubble.dataset.local = '1';
   if (STATS.test(value)) showThinking();
+  if (REPAIR.test(value)) {
+    addCard({
+      event: 'demo.repair',
+      data: {
+        title: '报修',
+        body: '助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。',
+        deeplink: REPAIR_LINK,
+      },
+    });
+  }
 }
 
 $('textForm').onsubmit = (e) => {
