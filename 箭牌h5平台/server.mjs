@@ -127,7 +127,7 @@ const routes = {
   async 'GET /api/config'() {
     return {
       brand: SCENARIO.brand,
-      starters: SCENARIO.starters,
+      starters: SCENARIO.starters.map((item) => (typeof item === 'string' ? item : item.text)).filter(Boolean),
       ready: credentialsReady(),
       missing: ['BRTC_APPID', 'BRTC_AK', 'BRTC_SK', 'BRTC_LICKEY'].filter((k) => !ENV[k]),
       iotMode: IOT_MODE,
