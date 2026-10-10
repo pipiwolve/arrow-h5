@@ -192,16 +192,24 @@ async function onAgentFrame(msg) {
   }
   if (data.startsWith('[F]:')) {
     if (/"result"\s*:/.test(data) && !data.includes('function_name')) return;
+    const hold = agentBubble;
+    agentBubble = null;
+    paintAgent('正在处理。');
+    if (agentBubble) agentBubble.classList.add('thinking');
     const finished = await api('/api/frame', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, frame: data, userText: lastAsk }),
     });
+    clearThinking();
+    agentBubble = hold;
     if (finished.ignored || finished.parsed?.ignored) return;
     if (finished.reply && typeof window.BRTC_SendMessageToUser === 'function') {
       window.BRTC_SendMessageToUser(finished.reply);
     }
     for (const card of finished.cards || []) addCard(card);
+    const spoken = String(finished.reply || '').match(/"content":"([^"]*)"/);
+    if (spoken?.[1]) paintAgent(spoken[1]);
     return;
   }
   if (!data.startsWith('[A]:') && !data.startsWith('[Q]:')) return;
