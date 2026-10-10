@@ -138,7 +138,14 @@ main { display: flex; min-width: 0; min-height: 0; }
 }
 .status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 
-.stage { display: none; }
+.stage {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+.stage audio, .stage video { display: block; }
 
 .stream {
   flex: 1;
