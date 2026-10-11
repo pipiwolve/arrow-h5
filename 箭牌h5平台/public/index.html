@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>箭牌智家 AI 助手</title>
 <link rel="icon" href="favicon.png">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=6">
 <link rel="prefetch" href="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js" as="script">
 </head>
 <body>
@@ -29,11 +29,15 @@
         <h1 id="callTitle">箭牌智能AI助手</h1>
       </header>
       <div class="status" id="status" hidden>空闲</div>
-      <div class="stage" aria-label="音视频" hidden>
+      <div class="stage" aria-label="音视频">
         <div id="therevideo"></div>
         <div id="herevideo"></div>
       </div>
       <div class="stream" id="stream" aria-live="polite">
+        <div class="booting" id="booting">
+          <i></i>
+          <p>箭牌 AI 助手正在赶来</p>
+        </div>
         <div class="prompts" id="prompts">
           <button type="button" data-text="把主卫的浴缸进水打开" disabled>把主卫的浴缸进水打开</button>
           <button type="button" data-text="把主卫坐便器的大冲打开" disabled>把主卫坐便器的大冲打开</button>
@@ -78,7 +82,7 @@
     </section>
   </main>
 </div>
-<script src="app.js?v=11"></script>
+<script src="app.js?v=17"></script>
 <script src="https://brtc-sdk.cdn.bcebos.com/npm/baidurtc@1.2.18/baidu.rtc.sdk.js" async></script>
 </body>
 </html>

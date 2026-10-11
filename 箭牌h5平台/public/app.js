@@ -15,6 +15,9 @@ let holding = false;
 let dictating = false;
 let lastAsk = '';
 let turnBusy = false;
+let pendingChat = [];
+let roomTimer = 0;
+let localIntentAt = 0;
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
@@ -101,7 +104,6 @@ function addCard(card) {
   if (card.event === 'demo.gate') {
     el.innerHTML = `<div class="lv">${data.level || ''} · ${DECISION_LABEL[decision] || decision}</div><div>${(data.reasons || []).join('；') || data.say || ''}</div>`;
     if (decision === 'confirm' && data.pendingId) {
-      turnBusy = true;
       const row = document.createElement('div');
       row.className = 'actions';
       const ok = document.createElement('button');
@@ -122,14 +124,23 @@ function addCard(card) {
     const label = RESULT_LABEL[data.result] || data.result || '';
     el.innerHTML = `<div class="lv">${label}</div><div>${msg}</div>`;
   } else if (card.event === 'demo.choose') {
-    turnBusy = true;
     el.innerHTML = `<div class="lv">选择设备</div><div>${data.say || '有多台设备符合，选一台再下发。'}</div>`;
     const row = document.createElement('div');
     row.className = 'actions';
+    const sameName = new Map();
+    for (const choice of data.choices || []) {
+      const key = [choice.room, choice.deviceTagName].filter(Boolean).join(' ');
+      sameName.set(key, (sameName.get(key) || 0) + 1);
+    }
+    const seen = new Map();
     for (const choice of data.choices || []) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = [choice.room, choice.deviceTagName].filter(Boolean).join(' ');
+      const key = [choice.room, choice.deviceTagName].filter(Boolean).join(' ');
+      const nth = (seen.get(key) || 0) + 1;
+      seen.set(key, nth);
+      const suffix = sameName.get(key) > 1 ? ` ${nth}` : '';
+      btn.textContent = key + suffix;
       btn.onclick = () => chooseDevice(data.action, choice.deviceName, el);
       row.append(btn);
     }
@@ -151,7 +162,6 @@ function addCard(card) {
 }
 
 async function chooseDevice(action, deviceName, el) {
-  turnBusy = true;
   const out = await api('/api/choose', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -159,7 +169,6 @@ async function chooseDevice(action, deviceName, el) {
   });
   el.remove();
   for (const card of out.cards || []) addCard(card);
-  if (!document.querySelector('.card.confirm, .card.choose')) turnBusy = false;
 }
 
 async function confirm(pendingId, decision, el) {
@@ -170,7 +179,6 @@ async function confirm(pendingId, decision, el) {
   });
   el.querySelector('.actions')?.remove();
   for (const card of out.cards || []) addCard(card);
-  turnBusy = false;
 }
 
 async function onAgentFrame(msg) {
@@ -198,11 +206,18 @@ async function onAgentFrame(msg) {
     const passed = data.includes('[PASS]');
     licPassed = passed;
     setStatus(passed ? '已连接' : '授权未通过');
-    if (passed) armSound();
+    if (passed) {
+      armSound();
+      setTimeout(readyToTalk, 8000);
+    } else {
+      $('booting').hidden = true;
+    }
     return;
   }
   if (data.startsWith('[F]:')) {
     if (/"result"\s*:/.test(data) && !data.includes('function_name')) return;
+    // 设备指令已由本机处理。房间随后交来的同一次调用没有原话，会把全部设备列出来。
+    if (data.includes('control_device') && Date.now() - localIntentAt < 15000) return;
     const hold = agentBubble;
     agentBubble = null;
     paintAgent('正在处理。');
@@ -212,7 +227,6 @@ async function onAgentFrame(msg) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, frame: data, userText: lastAsk }),
     });
-    clearThinking();
     agentBubble = hold;
     if (finished.ignored || finished.parsed?.ignored) return;
     if (finished.reply && typeof window.BRTC_SendMessageToUser === 'function') {
@@ -224,7 +238,7 @@ async function onAgentFrame(msg) {
     }
     const spoken = String(finished.reply || '').match(/"content":"([^"]*)"/);
     if (spoken?.[1]) paintAgent(spoken[1]);
-    turnBusy = false;
+    releaseRoom();
     return;
   }
   if (!data.startsWith('[A]:') && !data.startsWith('[Q]:')) return;
@@ -271,7 +285,9 @@ async function onAgentFrame(msg) {
     return;
   }
   if (!data.startsWith('[A]:')) return;
-  clearThinking();
+  if (!greeted) greetingText = text || agentBuf;
+  if (soundOn) greetingSpoken = true;
+  readyToTalk();
   if (partial) {
     agentBuf += text;
     paintAgent(agentBuf);
@@ -288,7 +304,7 @@ async function onAgentFrame(msg) {
   paintAgent(finished.parsed?.text || '');
   agentBubble = null;
   lastAsk = '';
-  turnBusy = false;
+  releaseRoom();
   for (const card of finished.cards || []) {
     if (card.event === 'demo.repair') continue;
     addCard(card);
@@ -304,25 +320,39 @@ function setRoomMic(on) {
 }
 
 let soundOn = false;
+let greetingText = '';
+let greetingSpoken = false;
 
-function unlockSound() {
-  if (soundOn) return;
-  soundOn = true;
-  const root = $('therevideo');
-  root?.querySelectorAll('audio,video').forEach((el) => {
+function playRoomAudio() {
+  let live = false;
+  $('therevideo')?.querySelectorAll('audio,video').forEach((el) => {
     el.muted = false;
     el.volume = 1;
+    if (!el.paused && !el.ended) live = true;
     el.play?.().catch(() => {});
   });
+  return live;
+}
+
+function unlockSound() {
+  if (soundOn) {
+    playRoomAudio();
+    return;
+  }
+  soundOn = true;
+  const live = playRoomAudio();
+  if (greetingText && !greetingSpoken && !live && typeof window.BRTC_SendMessageToUser === 'function') {
+    greetingSpoken = true;
+    window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + greetingText);
+  }
 }
 
 function armSound() {
-  const once = () => {
-    unlockSound();
-    document.removeEventListener('pointerdown', once, true);
-  };
-  document.addEventListener('pointerdown', once, true);
+  document.addEventListener('pointerdown', unlockSound, true);
 }
+
+new MutationObserver(() => { if (soundOn) playRoomAudio(); })
+  .observe($('therevideo'), { childList: true, subtree: true });
 
 function startRtc(join) {
   window.BRTC_Start(Object.assign({}, join, {
@@ -340,9 +370,21 @@ function startRtc(join) {
       setRoomMic(false);
     },
     localvideopublished_ok: () => { if (!holding) setRoomMic(false); },
-    error: (error) => setStatus('进房失败：' + error),
+    error: (error) => {
+      setStatus('进房失败：' + error);
+      $('booting').hidden = true;
+    },
     onmessage: (msg) => { onAgentFrame(msg).catch((e) => setStatus(e.message)); },
   }));
+}
+
+let greeted = false;
+
+function readyToTalk() {
+  if (greeted) return;
+  greeted = true;
+  $('booting').hidden = true;
+  unlockComposer();
 }
 
 function unlockComposer() {
@@ -364,7 +406,6 @@ async function startCall() {
     });
     sessionId = opened.session.id;
     licFrame = opened.licFrame || '';
-    unlockComposer();
     if (typeof window.BRTC_Start !== 'function') {
       setStatus('BRTC SDK 未加载，连接未建立');
       throw new Error('BRTC SDK 未加载');
@@ -376,6 +417,7 @@ async function startCall() {
   } catch (e) {
     setStatus(e.message);
     $('credHint').textContent = e.message;
+    $('booting').hidden = true;
   } finally {
     connectPromise = null;
   }
@@ -410,22 +452,26 @@ $('nav').onclick = (e) => {
 
 const OPERATE = /打开|关闭|开一下|关一下|冲水|大冲|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
 const REPAIR = /报修|维修/;
+const TOPIC = /调用了多少|调用次数|多少次|失败了几次|成功了几次|用得最久|使用时长|用了多久|用了多少分钟/;
 const REPAIR_LINK = 'arrowhome://repair/create?from=ai_assistant';
-const STATS = /多少次|几次|用得最久|使用时长|用了多久|统计|调用|失败了/;
 
-function showThinking() {
-  // 上一轮的等待或回答先收掉，避免第二次统计写进旧气泡。
-  agentBubble = null;
-  agentBuf = '';
-  paintAgent('已转发到 DuMate。');
-  if (agentBubble) agentBubble.classList.add('thinking');
+function releaseRoom() {
+  turnBusy = false;
+  clearTimeout(roomTimer);
+  const next = pendingChat.shift();
+  micNote(pendingChat.length ? `还有 ${pendingChat.length} 句等待发送` : '');
+  if (next) sayToRoom(next);
 }
 
-function clearThinking() {
-  if (agentBubble?.classList.contains('thinking')) {
-    agentBubble.remove();
-    agentBubble = null;
-  }
+function sayToRoom(value) {
+  turnBusy = true;
+  window.BRTC_SendMessageToUser('[T]:' + value);
+  sentText = value;
+  lastAsk = value;
+  userBubble = addBubble('user', value);
+  userBubble.dataset.local = '1';
+  clearTimeout(roomTimer);
+  roomTimer = setTimeout(releaseRoom, 20000);
 }
 
 function showRepair() {
@@ -445,6 +491,7 @@ function showRepair() {
 }
 
 function showIntent(out) {
+  localIntentAt = Date.now();
   if (out.say) {
     addBubble('agent', out.say);
     if (typeof window.BRTC_SendMessageToUser === 'function') {
@@ -457,6 +504,24 @@ function showIntent(out) {
 async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
+  if (TOPIC.test(value)) {
+    addBubble('user', value);
+    try {
+      const out = await api('/api/topic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: value }),
+      });
+      const answer = out.text || '适配层没有返回结论。';
+      addBubble('agent', answer);
+      if (typeof window.BRTC_SendMessageToUser === 'function') {
+        window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + answer);
+      }
+    } catch (e) {
+      addBubble('agent', e.message);
+    }
+    return;
+  }
   if (REPAIR.test(value)) {
     addBubble('user', value);
     showRepair();
@@ -475,18 +540,13 @@ async function sendText(text) {
     }
     return;
   }
-  if (turnBusy || typeof window.BRTC_SendMessageToUser !== 'function') {
-    micNote('上一条还没结束', true);
+  if (typeof window.BRTC_SendMessageToUser !== 'function') return;
+  if (turnBusy) {
+    pendingChat.push(value);
+    micNote(`上一条说完后继续，还有 ${pendingChat.length} 句`);
     return;
   }
-  turnBusy = true;
-  window.BRTC_SendMessageToUser('[T]:' + value);
-  sentText = value;
-  lastAsk = value;
-  userBubble = addBubble('user', value);
-  userBubble.dataset.local = '1';
-  if (STATS.test(value)) showThinking();
-  setTimeout(() => { turnBusy = false; }, 20000);
+  sayToRoom(value);
 }
 
 $('textForm').onsubmit = (e) => {
@@ -653,6 +713,7 @@ function enableStarters() {
 }
 
 api('/api/config').then((cfg) => {
+  greetingText = cfg.sayhi || '';
   $('credHint').textContent = cfg.ready ? '' : `还不能连接，缺 ${cfg.missing.join('、')}`;
   if (cfg.ready) startCall();
 }).catch((e) => { $('credHint').textContent = e.message; });

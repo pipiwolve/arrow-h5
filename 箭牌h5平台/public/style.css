@@ -99,6 +99,24 @@ body::-webkit-scrollbar { width: 8px; }
 
 main { display: flex; min-width: 0; min-height: 0; }
 .view { display: none; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
+.booting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 4px;
+  color: var(--muted);
+}
+.booting[hidden] { display: none; }
+.booting i {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.booting p { margin: 0; letter-spacing: 0.08em; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .view.on { display: flex; }
 
 .chat-head {

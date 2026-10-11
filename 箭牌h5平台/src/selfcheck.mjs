@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { SCENARIO, DEVICES } from '../scenario.mjs';
 import { createGate } from './policy.mjs';
 import { actionFromCall, asrUtterance, extractAction, classifyFrame, functionResultFrame, parseFunction } from './frames.mjs';
+import { topicModel } from './topic.mjs';
 import { buildRole, userEcho, visibleReply } from './roster.mjs';
 import { completeItem, fillTargets, narrowDevices, trustedName } from './resolve.mjs';
 import { agentConfig, licActiveFrame } from './aiagent.mjs';
@@ -43,6 +44,9 @@ assert.equal(classifyFrame('[A]:你好').kind, 'agent');
 assert.equal(asrUtterance('我没有听清，请再说一遍'), '');
 assert.equal(asrUtterance('没听清'), '');
 assert.equal(asrUtterance('把主卫镜柜的夜灯打开'), '把主卫镜柜的夜灯打开');
+assert.equal(topicModel('这个月调用了多少次'), 'iot_calls');
+assert.equal(topicModel('哪台用得最久'), 'usage_duration');
+assert.equal(topicModel('把主卫镜柜的夜灯打开'), '');
 
 const frame = licActiveFrame({ devId: 'DEVID-ARROW-H5-0001', licKey: 'LIC-TEST', uid: '42' });
 assert.equal(frame.startsWith('[E]:[LIC]:[ACTIVE]:'), true);

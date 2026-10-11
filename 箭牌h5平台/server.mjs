@@ -18,6 +18,7 @@ import { createGate } from './src/policy.mjs';
 import { createSessions } from './src/session.mjs';
 import { createTurn } from './src/turn.mjs';
 import { actionFromCall, classifyFrame, extractAction, functionResultFrame } from './src/frames.mjs';
+import { topicModel } from './src/topic.mjs';
 import { buildRole, visibleReply } from './src/roster.mjs';
 import { createGateway } from '../箭牌demo打通/iot/mock-gateway.mjs';
 
@@ -136,6 +137,7 @@ const routes = {
       fixture: FIXTURE_NAME,
       homeId: SCENARIO.iot.homeId,
       voice: true,
+      topic: Boolean(ENV.TOPIC_API_KEY && ENV.TOPIC_ADAPTER_URL),
     };
   },
 
@@ -242,6 +244,32 @@ const routes = {
       parsed: { kind: 'agent', text: shown || spoken, partial: false },
       action, cards: finished.cards,
     });
+  },
+
+  async 'POST /api/topic'(req) {
+    const { text } = await readBody(req);
+    const model = topicModel(text);
+    if (!model) return { status: 400, body: { error: '不是数据统计话题' } };
+    if (!ENV.TOPIC_API_KEY || !ENV.TOPIC_ADAPTER_URL) {
+      return { status: 400, body: { error: '数据统计适配层未配置' } };
+    }
+    const res = await fetch(ENV.TOPIC_ADAPTER_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${ENV.TOPIC_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: String(text || '') }],
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { status: res.status, body: { error: body.error?.message || `适配层 HTTP ${res.status}` } };
+    }
+    const answer = body.choices?.[0]?.message?.content || '';
+    return { model, text: answer };
   },
 
   async 'POST /api/intent'(req) {

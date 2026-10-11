@@ -58,7 +58,7 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
     const msg = body?.msg || body?.message || data.error || '';
     const accepted = body && (body.code === 200 || body.code === 10000) && body.success !== false;
     if (accepted) return '平台已受理。';
-    if (/设备离线/.test(msg)) return '平台返回设备离线，这一次没有执行。';
+    if (/设备离线/.test(msg)) return '设备当前离线，指令已送到平台，这一次没有执行。';
     return msg ? `平台返回：${msg}` : '平台没有受理。';
   }
 
