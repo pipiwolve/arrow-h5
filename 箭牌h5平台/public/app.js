@@ -666,6 +666,12 @@ function stopHold() {
 }
 
 const micBtn = $('btnMic');
+micBtn.addEventListener('touchstart', (e) => {
+  if (micBtn.disabled) return;
+  e.preventDefault();
+}, { passive: false });
+micBtn.addEventListener('selectstart', (e) => e.preventDefault());
+micBtn.addEventListener('dragstart', (e) => e.preventDefault());
 micBtn.addEventListener('pointerdown', (e) => {
   if (micBtn.disabled || e.button > 0) return;
   e.preventDefault();
@@ -683,15 +689,15 @@ window.addEventListener('blur', () => { if (holding) stopHold(); });
 
 function pinKeyboard() {
   const vv = window.visualViewport;
-  if (!vv || window.innerWidth > 760) {
+  const dock = $('dock');
+  if (!vv || !dock || window.innerWidth > 760) {
     document.documentElement.style.setProperty('--kb', '0px');
+    if (dock) dock.style.transform = '';
     return;
   }
-  const gap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-  document.documentElement.style.setProperty('--kb', gap + 'px');
-  if (document.activeElement === $('textInput')) {
-    $('dock')?.scrollIntoView?.({ block: 'end' });
-  }
+  const covered = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  document.documentElement.style.setProperty('--kb', covered + 'px');
+  dock.style.transform = covered ? `translateY(${-covered}px)` : '';
 }
 window.visualViewport?.addEventListener('resize', pinKeyboard);
 window.visualViewport?.addEventListener('scroll', pinKeyboard);
