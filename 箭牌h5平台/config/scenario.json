@@ -27,7 +27,7 @@
       "when": { "cmd": "switch_water_in" },
       "level": "H",
       "label": "浴缸进水阀开关",
-      "basis": "需求 3.4 点名的水阀开关"
+      "basis": "打开主卫浴缸进水"
     },
     {
       "when": { "param": "switch" },

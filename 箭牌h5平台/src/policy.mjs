@@ -108,7 +108,7 @@ export function createGate({ scenario, devices }) {
     }
     return {
       decision: 'allow', level, action: act, items,
-      reasons: reasons2.length ? reasons2 : [`${level} 级操作，闸门放行`],
+      reasons: reasons2.length ? reasons2 : ['可以下发'],
     };
   }
 

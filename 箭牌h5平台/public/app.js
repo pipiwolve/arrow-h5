@@ -285,8 +285,6 @@ async function onAgentFrame(msg) {
     return;
   }
   if (!data.startsWith('[A]:')) return;
-  if (!greeted) greetingText = text || agentBuf;
-  if (soundOn) greetingSpoken = true;
   readyToTalk();
   if (partial) {
     agentBuf += text;
@@ -320,31 +318,18 @@ function setRoomMic(on) {
 }
 
 let soundOn = false;
-let greetingText = '';
-let greetingSpoken = false;
 
 function playRoomAudio() {
-  let live = false;
   $('therevideo')?.querySelectorAll('audio,video').forEach((el) => {
     el.muted = false;
     el.volume = 1;
-    if (!el.paused && !el.ended) live = true;
     el.play?.().catch(() => {});
   });
-  return live;
 }
 
 function unlockSound() {
-  if (soundOn) {
-    playRoomAudio();
-    return;
-  }
   soundOn = true;
-  const live = playRoomAudio();
-  if (greetingText && !greetingSpoken && !live && typeof window.BRTC_SendMessageToUser === 'function') {
-    greetingSpoken = true;
-    window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + greetingText);
-  }
+  playRoomAudio();
 }
 
 function armSound() {
@@ -644,6 +629,10 @@ function micNote(text, err) {
 }
 
 function startHold() {
+  if (!window.isSecureContext) {
+    micNote('当前地址是 http，浏览器不允许使用麦克风。请用 https 域名打开。', true);
+    return;
+  }
   if (holding || $('btnMic').disabled || !sessionId || !licPassed) {
     if (!licPassed) micNote('还在连接，稍等一下', true);
     return;
@@ -713,7 +702,7 @@ function enableStarters() {
 }
 
 api('/api/config').then((cfg) => {
-  greetingText = cfg.sayhi || '';
+
   $('credHint').textContent = cfg.ready ? '' : `还不能连接，缺 ${cfg.missing.join('、')}`;
   if (cfg.ready) startCall();
 }).catch((e) => { $('credHint').textContent = e.message; });
