@@ -40,6 +40,7 @@ export function createSessions({ brtc, scenario, store }) {
       token: call.token,
       devId: brtc.devId,
       lastUserText: '',
+      turnGen: 0,
     };
     live.set(id, rec);
     const state = await store.readJson({ sessions: [] });
@@ -71,6 +72,21 @@ export function createSessions({ brtc, scenario, store }) {
     const rec = live.get(id);
     const value = String(text || '').trim();
     if (rec && value) rec.lastUserText = value.slice(0, 200);
+  }
+
+  /**
+   * 新一句开始时作废上一句。返回这一句的代号。
+   * 闸门、选设备和 IoT 仍会跑完，但只有代号没被更新的结果才交给页面和 TTS。
+   */
+  function beginTurn(id) {
+    const rec = live.get(id);
+    if (!rec) return 0;
+    rec.turnGen = (rec.turnGen || 0) + 1;
+    return rec.turnGen;
+  }
+
+  function currentTurn(id) {
+    return live.get(id)?.turnGen || 0;
   }
 
   /** 网关推来 [E]:[LIC]:[MUST] 后，由服务端拼激活帧。 */
@@ -113,5 +129,5 @@ export function createSessions({ brtc, scenario, store }) {
     return state.sessions || [];
   }
 
-  return { open, get, noteUserText, activate, markLic, close, list };
+  return { open, get, noteUserText, beginTurn, currentTurn, activate, markLic, close, list };
 }

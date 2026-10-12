@@ -17,7 +17,7 @@ import { createIotClient } from './src/iot-client.mjs';
 import { createGate } from './src/policy.mjs';
 import { createSessions } from './src/session.mjs';
 import { createTurn } from './src/turn.mjs';
-import { actionFromCall, classifyFrame, extractAction, functionResultFrame } from './src/frames.mjs';
+import { actionFromCall, classifyFrame, extractAction, functionResultFrame, visibleAgent } from './src/frames.mjs';
 import { topicModel } from './src/topic.mjs';
 import { buildRole, visibleReply } from './src/roster.mjs';
 import { createGateway } from '../箭牌demo打通/iot/mock-gateway.mjs';
@@ -190,7 +190,7 @@ const routes = {
   },
 
   async 'POST /api/frame'(req) {
-    const { sessionId, frame, finalText, userText } = await readBody(req);
+    const { sessionId, frame, finalText, userText, turnGen: bodyTurn } = await readBody(req);
     const parsed = classifyFrame(frame);
     if (parsed.kind === 'function') {
       if (!parsed.call) return { parsed: { kind: 'function', ignored: true }, cards: [] };
@@ -204,7 +204,11 @@ const routes = {
         return { parsed: { kind: 'function', name: parsed.call.name }, reply, cards: [] };
       }
       const spoken = String(userText || sessions.get(sessionId)?.lastUserText || '').trim();
+      const turnGen = Number.isFinite(Number(bodyTurn)) ? Number(bodyTurn) : sessions.currentTurn(sessionId);
       const finished = await turn.finish({ sessionId, action, userText: spoken });
+      if (turnGen && sessions.currentTurn(sessionId) !== turnGen) {
+        return { parsed: { kind: 'function', name: parsed.call.name }, superseded: true, cards: [] };
+      }
       if (finished.cards?.length) {
         await journal.appendTurn({ sessionId, turnId: 't_' + Date.now(), cards: finished.cards });
       }
@@ -234,12 +238,16 @@ const routes = {
     const { action, clean } = extractAction(text);
     const asked = String(userText || '').trim();
     if (asked) sessions.noteUserText(sessionId, asked);
+    const turnGen = Number.isFinite(Number(bodyTurn)) ? Number(bodyTurn) : sessions.currentTurn(sessionId);
     const finished = await turn.finish({ sessionId, action, userText: asked });
+    if (turnGen && sessions.currentTurn(sessionId) !== turnGen) {
+      return { parsed: { kind: 'agent', text: '', partial: false }, superseded: true, cards: [] };
+    }
     if (finished.cards?.length) {
       await journal.appendTurn({ sessionId, turnId: 't_' + Date.now(), cards: finished.cards });
     }
     const spoken = String(finished.spoken || '').trim();
-    const shown = visibleReply(clean, userText);
+    const shown = visibleAgent(visibleReply(clean, userText));
     return redact({
       parsed: { kind: 'agent', text: shown || spoken, partial: false },
       action, cards: finished.cards,
@@ -272,15 +280,25 @@ const routes = {
     return { model, text: answer };
   },
 
+  async 'POST /api/turn'(req) {
+    const { sessionId } = await readBody(req);
+    if (!sessions.get(sessionId)) return { status: 404, body: { error: '会话不存在或已结束' } };
+    return { turnGen: sessions.beginTurn(sessionId) };
+  },
+
   async 'POST /api/intent'(req) {
-    const { sessionId, text } = await readBody(req);
+    const { sessionId, text, turnGen: bodyTurn } = await readBody(req);
     const userText = String(text || '').trim();
     if (!userText) return { status: 400, body: { error: '没有要处理的话' } };
+    const turnGen = Number.isFinite(Number(bodyTurn)) ? Number(bodyTurn) : sessions.currentTurn(sessionId);
     const action = {
       action: 'device.control',
       targets: [{ deviceName: '', cmd: '', param: '', value: '' }],
     };
     const finished = await turn.finish({ sessionId, action, userText });
+    if (turnGen && sessions.currentTurn(sessionId) !== turnGen) {
+      return { superseded: true, cards: [], say: '' };
+    }
     if (finished.cards?.length) {
       await journal.appendTurn({ sessionId, turnId: 't_' + Date.now(), cards: finished.cards });
     }

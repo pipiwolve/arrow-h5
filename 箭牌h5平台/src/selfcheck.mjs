@@ -50,7 +50,10 @@ assert.equal(topicModel('把主卫镜柜的夜灯打开'), '');
 assert.equal(visibleAgent('请提供卫浴设备名称（deviceName）和执行动作（cmd）'), '');
 assert.equal(visibleAgent('请提供设备名称和具体操作（如大冲、小冲、夜灯开关等）；其余参数可选。'), '');
 assert.equal(visibleAgent('请提供设备名称和具体指令（如大冲、小冲、夜灯开关等）；其他参数可选提供。'), '');
+assert.equal(visibleAgent('请提供 device ID、name 以及 CMD 操作指令'), '');
+assert.equal(visibleAgent('请提供deviceId、name以及CMD'), '');
 assert.equal(visibleAgent('准备打开夜灯。'), '准备打开夜灯。');
+assert.equal(visibleAgent('夜灯已经为你打开。'), '夜灯已经为你打开。');
 assert.equal(visibleAgent('请告诉我是哪一间卫生间。'), '请告诉我是哪一间卫生间。');
 
 const frame = licActiveFrame({ devId: 'DEVID-ARROW-H5-0001', licKey: 'LIC-TEST', uid: '42' });

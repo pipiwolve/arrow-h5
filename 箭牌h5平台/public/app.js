@@ -1,6 +1,8 @@
 // 页面只做三件事：进 BRTC 房间、把字幕交回编排层、渲染闸门卡。
 // 不读 AK/SK，不拼授权帧。
 
+import { createTurnGate } from './turn-gate.js';
+
 const $ = (id) => document.getElementById(id);
 let sessionId = null;
 let licFrame = '';
@@ -14,10 +16,30 @@ let licPassed = false;
 let holding = false;
 let dictating = false;
 let lastAsk = '';
-let turnBusy = false;
-let pendingChat = [];
 let roomTimer = 0;
 let localIntentAt = 0;
+
+function stopSpeech() {
+  const media = $('therevideo');
+  media?.querySelectorAll('audio,video').forEach((el) => {
+    try {
+      el.pause();
+      el.currentTime = 0;
+    } catch {}
+  });
+  if (typeof window.BRTC_SendMessageToUser === 'function') {
+    window.BRTC_SendMessageToUser('[B]');
+  }
+}
+
+const turns = createTurnGate({
+  claim: () => api('/api/turn', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId }),
+  }),
+  breakTurn: stopSpeech,
+});
 
 async function api(path, opts) {
   const res = await fetch(path, opts);
@@ -61,7 +83,7 @@ function sameText(a, b) {
 
 // 与 src/roster.mjs 的 ROSTER_MARK、visibleReply、userEcho 一致。
 const ROSTER_MARK = '【家庭设备】';
-const PARAM_CHASE = /deviceName|请提供设备名称|请提供卫浴设备名称|执行动作|具体指令|其余参数可选|其他参数可选/;
+const PARAM_CHASE = /device\s*ID|deviceId|deviceName|CMD|请提供|执行动作|具体指令|其余参数可选|其他参数可选/i;
 
 function visibleAgent(text) {
   const value = String(text || '').trim();
@@ -188,6 +210,10 @@ async function confirm(pendingId, decision, el) {
   for (const card of out.cards || []) addCard(card);
 }
 
+function stale(gen) {
+  return turns.stale(gen);
+}
+
 async function onAgentFrame(msg) {
   const data = msg?.data || '';
   if (data.startsWith('[E]:[LIC]:[MUST]')) {
@@ -226,15 +252,17 @@ async function onAgentFrame(msg) {
     // 设备指令已由本机处理。房间随后交来的同一次调用没有原话，会把全部设备列出来。
     if (data.includes('control_device') && Date.now() - localIntentAt < 15000) return;
     const hold = agentBubble;
+    const gen = turns.snapshot().turnGen;
     agentBubble = null;
     paintAgent('正在处理。');
     if (agentBubble) agentBubble.classList.add('thinking');
     const finished = await api('/api/frame', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, frame: data, userText: lastAsk }),
+      body: JSON.stringify({ sessionId, frame: data, userText: lastAsk, turnGen: gen }),
     });
     agentBubble = hold;
+    if (stale(gen) || finished.superseded) return;
     if (finished.ignored || finished.parsed?.ignored) return;
     if (finished.reply && typeof window.BRTC_SendMessageToUser === 'function') {
       window.BRTC_SendMessageToUser(finished.reply);
@@ -245,7 +273,7 @@ async function onAgentFrame(msg) {
     }
     const spoken = String(finished.reply || '').match(/"content":"([^"]*)"/);
     if (spoken?.[1]) paintAgent(spoken[1]);
-    releaseRoom();
+    releaseRoom(gen);
     return;
   }
   if (!data.startsWith('[A]:') && !data.startsWith('[Q]:')) return;
@@ -293,7 +321,9 @@ async function onAgentFrame(msg) {
   }
   if (!data.startsWith('[A]:')) return;
   readyToTalk();
+  const gen = turns.snapshot().turnGen;
   if (partial) {
+    if (stale(gen)) return;
     agentBuf += text;
     paintAgent(agentBuf);
     return;
@@ -303,13 +333,16 @@ async function onAgentFrame(msg) {
   const finished = await api('/api/frame', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, frame: data, finalText, userText: lastAsk }),
+    body: JSON.stringify({ sessionId, frame: data, finalText, userText: lastAsk, turnGen: gen }),
   });
+  if (stale(gen) || finished.superseded) return;
   agentBuf = '';
-  paintAgent(finished.parsed?.text || '');
+  const shown = finished.parsed?.text || '';
+  if (!shown) stopSpeech();
+  paintAgent(shown);
   agentBubble = null;
   lastAsk = '';
-  releaseRoom();
+  releaseRoom(gen);
   for (const card of finished.cards || []) {
     if (card.event === 'demo.repair') continue;
     addCard(card);
@@ -447,26 +480,35 @@ const REPAIR = /报修|维修/;
 const TOPIC = /调用了多少|调用次数|多少次|失败了几次|成功了几次|用得最久|使用时长|用了多久|用了多少分钟/;
 const REPAIR_LINK = 'arrowhome://repair/create?from=ai_assistant';
 
-function releaseRoom() {
-  turnBusy = false;
+function releaseRoom(gen) {
+  if (!turns.release(gen)) return;
   clearTimeout(roomTimer);
-  const next = pendingChat.shift();
-  micNote(pendingChat.length ? `还有 ${pendingChat.length} 句等待发送` : '');
-  if (next) sayToRoom(next);
+  micNote('');
 }
 
-function sayToRoom(value) {
-  turnBusy = true;
+async function openTurn(kind) {
+  agentBuf = '';
+  agentBubble?.remove();
+  agentBubble = null;
+  clearTimeout(roomTimer);
+  const gen = await turns.openTurn(kind);
+  if (kind === 'room') roomTimer = setTimeout(() => releaseRoom(gen), 20000);
+  return gen;
+}
+
+async function sayToRoom(value) {
+  const gen = await openTurn('room');
+  if (stale(gen)) return;
   window.BRTC_SendMessageToUser('[T]:' + value);
   sentText = value;
   lastAsk = value;
   userBubble = addBubble('user', value);
   userBubble.dataset.local = '1';
-  clearTimeout(roomTimer);
-  roomTimer = setTimeout(releaseRoom, 20000);
+  userBubble.dataset.gen = String(gen);
 }
 
-function showRepair() {
+async function showRepair() {
+  const gen = await openTurn('local');
   const say = '已准备好报修入口。';
   addBubble('agent', say);
   if (typeof window.BRTC_SendMessageToUser === 'function') {
@@ -480,9 +522,11 @@ function showRepair() {
       deeplink: REPAIR_LINK,
     },
   });
+  return gen;
 }
 
 function showIntent(out) {
+  if (out.superseded) return;
   localIntentAt = Date.now();
   if (out.say) {
     addBubble('agent', out.say);
@@ -501,6 +545,7 @@ async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
   if (TOPIC.test(value)) {
+    const gen = await openTurn('topic');
     addBubble('user', value);
     try {
       const out = await api('/api/topic', {
@@ -508,42 +553,45 @@ async function sendText(text) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: value }),
       });
+      if (stale(gen)) return;
       const answer = out.text || '适配层没有返回结论。';
       addBubble('agent', answer);
       if (typeof window.BRTC_SendMessageToUser === 'function') {
         window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + answer);
       }
     } catch (e) {
-      addBubble('agent', e.message);
+      if (!stale(gen)) addBubble('agent', e.message);
+    } finally {
+      turns.finishLocal(gen);
     }
     return;
   }
   if (REPAIR.test(value)) {
     addBubble('user', value);
-    showRepair();
+    const gen = await showRepair();
+    turns.finishLocal(gen);
     return;
   }
   if (OPERATE.test(value)) {
+    const gen = await openTurn('intent');
     rememberAsk(value);
     addBubble('user', value);
     try {
-      showIntent(await api('/api/intent', {
+      const out = await api('/api/intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, text: value }),
-      }));
+        body: JSON.stringify({ sessionId, text: value, turnGen: gen }),
+      });
+      if (!stale(gen)) showIntent(out);
     } catch (e) {
-      addBubble('agent', e.message);
+      if (!stale(gen)) addBubble('agent', e.message);
+    } finally {
+      turns.finishLocal(gen);
     }
     return;
   }
   if (typeof window.BRTC_SendMessageToUser !== 'function') return;
-  if (turnBusy) {
-    pendingChat.push(value);
-    micNote(`上一条说完后继续，还有 ${pendingChat.length} 句`);
-    return;
-  }
-  sayToRoom(value);
+  await sayToRoom(value);
 }
 
 $('textForm').onsubmit = (e) => {
