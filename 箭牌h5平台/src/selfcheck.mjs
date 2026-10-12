@@ -47,9 +47,9 @@ assert.equal(asrUtterance('把主卫镜柜的夜灯打开'), '把主卫镜柜的
 assert.equal(topicModel('这个月调用了多少次'), 'iot_calls');
 assert.equal(topicModel('哪台用得最久'), 'usage_duration');
 assert.equal(topicModel('把主卫镜柜的夜灯打开'), '');
-assert.equal(visibleAgent('请提供 deviceName 和 cmd', true), '');
-assert.equal(visibleAgent('准备打开夜灯。', true), '准备打开夜灯。');
-assert.equal(visibleAgent('请提供 deviceName', false), '请提供 deviceName');
+assert.equal(visibleAgent('请提供卫浴设备名称（deviceName）和执行动作（cmd）'), '');
+assert.equal(visibleAgent('准备打开夜灯。'), '准备打开夜灯。');
+assert.equal(visibleAgent('请告诉我是哪一间卫生间。'), '请告诉我是哪一间卫生间。');
 
 const frame = licActiveFrame({ devId: 'DEVID-ARROW-H5-0001', licKey: 'LIC-TEST', uid: '42' });
 assert.equal(frame.startsWith('[E]:[LIC]:[ACTIVE]:'), true);

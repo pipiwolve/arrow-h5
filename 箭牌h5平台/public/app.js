@@ -61,11 +61,11 @@ function sameText(a, b) {
 
 // 与 src/roster.mjs 的 ROSTER_MARK、visibleReply、userEcho 一致。
 const ROSTER_MARK = '【家庭设备】';
-const PARAM_CHASE = /deviceName|请提供|参数名|cmd|param|value|say/;
+const PARAM_CHASE = /deviceName|请提供卫浴设备名称|执行动作/;
 
-function visibleAgent(text, choosing) {
+function visibleAgent(text) {
   const value = String(text || '').trim();
-  if (choosing && PARAM_CHASE.test(value)) return '';
+  if (PARAM_CHASE.test(value)) return '';
   return value;
 }
 
@@ -87,12 +87,8 @@ function userEcho(text, sent) {
   return { text: src, echo: got === want || (want.startsWith(got) && got.length > 0) };
 }
 
-function choosingDevice() {
-  return Boolean(document.querySelector('.card.choose'));
-}
-
 function paintAgent(text) {
-  const shown = visibleAgent(visibleReply(text, lastAsk), choosingDevice());
+  const shown = visibleAgent(visibleReply(text, lastAsk));
   if (!shown) {
     agentBubble?.remove();
     agentBubble = null;

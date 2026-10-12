@@ -160,12 +160,12 @@ export function asrUtterance(text) {
   return value;
 }
 
-const PARAM_CHASE = /deviceName|请提供|参数名|cmd|param|value|say/;
+const PARAM_CHASE = /deviceName|请提供卫浴设备名称|执行动作/;
 
-/** 页面已经给出设备选择时，模型向用户索要字段名的话不再显示。 */
-export function visibleAgent(text, choosing) {
+/** 模型向用户索要接口字段名时，这句话不进入对话。 */
+export function visibleAgent(text) {
   const value = String(text || '').trim();
-  if (choosing && PARAM_CHASE.test(value)) return '';
+  if (PARAM_CHASE.test(value)) return '';
   return value;
 }
 
