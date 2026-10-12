@@ -14,6 +14,12 @@ const GENERATE_PATH = '/api/v1/aiagent/generateAIAgentCall';
 const STOP_PATH = '/api/v1/aiagent/stopAIAgentInstance';
 const HEADERS_TO_SIGN = ['host', 'content-type'];
 
+// 建实例时生效，优先级高于控制台热词表。https://cloud.baidu.com/doc/RTC/s/hm8zjic1q
+const HOTWORDS = [
+  '大冲', '小冲', '冲水', '夜灯', '自动翻盖', '脚触感应', '自动润瓷',
+  '进水', '放水', '坐便器', '马桶', '镜柜', '浴缸', '报修',
+];
+
 export function agentConfig(scenario) {
   // 不传 sceneRoleCfg。人设由百度控制台「自定义角色」提供，避免每次建实例覆盖它。
   return {
@@ -24,6 +30,7 @@ export function agentConfig(scenario) {
     // https://cloud.baidu.com/doc/RTC/s/9mj8k5zat
     asr_long_audio_mode: true,
     disable_voice_auto_int: true,
+    hotwords: HOTWORDS.join(','),
     tts_sayhi: scenario.agent.sayhi || '',
   };
 }

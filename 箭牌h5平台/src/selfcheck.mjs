@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { SCENARIO, DEVICES } from '../scenario.mjs';
 import { createGate } from './policy.mjs';
-import { actionFromCall, asrUtterance, extractAction, classifyFrame, functionResultFrame, parseFunction } from './frames.mjs';
+import { actionFromCall, asrUtterance, extractAction, classifyFrame, functionResultFrame, parseFunction, visibleAgent } from './frames.mjs';
 import { topicModel } from './topic.mjs';
 import { buildRole, userEcho, visibleReply } from './roster.mjs';
 import { completeItem, fillTargets, narrowDevices, trustedName } from './resolve.mjs';
@@ -47,6 +47,9 @@ assert.equal(asrUtterance('把主卫镜柜的夜灯打开'), '把主卫镜柜的
 assert.equal(topicModel('这个月调用了多少次'), 'iot_calls');
 assert.equal(topicModel('哪台用得最久'), 'usage_duration');
 assert.equal(topicModel('把主卫镜柜的夜灯打开'), '');
+assert.equal(visibleAgent('请提供 deviceName 和 cmd', true), '');
+assert.equal(visibleAgent('准备打开夜灯。', true), '准备打开夜灯。');
+assert.equal(visibleAgent('请提供 deviceName', false), '请提供 deviceName');
 
 const frame = licActiveFrame({ devId: 'DEVID-ARROW-H5-0001', licKey: 'LIC-TEST', uid: '42' });
 assert.equal(frame.startsWith('[E]:[LIC]:[ACTIVE]:'), true);
@@ -132,6 +135,9 @@ const cfg = agentConfig(SCENARIO);
 assert.equal(cfg.role, undefined);
 assert.equal(cfg.sceneRoleCfg, undefined);
 assert.equal(cfg.asr_long_audio_mode, true);
+assert.equal(cfg.hotwords.split(',').includes('大冲'), true);
+assert.equal(cfg.hotwords.split(',').includes('小冲'), true);
+assert.equal(cfg.hotwords.includes('，'), false);
 assert.equal(cfg.asr, undefined);
 assert.equal(role.includes('你是箭牌'), false);
 

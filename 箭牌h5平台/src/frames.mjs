@@ -160,6 +160,15 @@ export function asrUtterance(text) {
   return value;
 }
 
+const PARAM_CHASE = /deviceName|请提供|参数名|cmd|param|value|say/;
+
+/** 页面已经给出设备选择时，模型向用户索要字段名的话不再显示。 */
+export function visibleAgent(text, choosing) {
+  const value = String(text || '').trim();
+  if (choosing && PARAM_CHASE.test(value)) return '';
+  return value;
+}
+
 function tidy(text) {
   return String(text).replace(/\n{3,}/g, '\n\n').trim();
 }
