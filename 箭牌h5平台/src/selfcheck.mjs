@@ -210,5 +210,21 @@ const filledName = fillTargets(
   DEVICES.devices,
 );
 assert.equal(filledName[0].deviceName, 'ARROWToilet17419421020631');
+const flushOnly = await turn.finish({
+  sessionId: 'hs_flush',
+  userText: '冲水',
+  action: { action: 'device.control', targets: [{ deviceName: '', cmd: '', param: '', value: '' }] },
+});
+assert.equal(flushOnly.cards[0].event, 'demo.choose');
+const afterPick = await turn.finish({
+  sessionId: 'hs_flush_pick',
+  userText: '冲水',
+  action: {
+    action: 'device.control',
+    targets: [{ deviceName: 'ARROWToilet17419421020631', cmd: '', param: '', value: '' }],
+  },
+});
+assert.equal(afterPick.cards.some((c) => c.event === 'demo.result' || c.data?.decision === 'allow'), true);
+assert.equal(afterPick.cards.some((c) => /缺少 value/.test(JSON.stringify(c))), false);
 
 console.log('selfcheck ok');

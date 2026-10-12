@@ -44,6 +44,7 @@
   },
   "commands": [
     { "cmd": "switch_watering", "params": { "switch": ["on"] }, "desc": "马桶大冲", "appliesTo": ["01"] },
+    { "cmd": "switch_watering_small", "params": { "switch": ["on"] }, "desc": "马桶小冲", "appliesTo": ["01"] },
     { "cmd": "switch_night_light", "params": { "switch": ["on", "off"] }, "desc": "夜灯", "appliesTo": ["01", "06"] },
     { "cmd": "switch_auto_closing", "params": { "switch": ["on", "off"] }, "desc": "马桶自动翻盖", "appliesTo": ["01"] },
     { "cmd": "switch_kicking", "params": { "switch": ["on", "off"] }, "desc": "马桶脚触感应", "appliesTo": ["01"] },

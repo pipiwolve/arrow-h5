@@ -294,7 +294,7 @@ const routes = {
   },
 
   async 'POST /api/choose'(req) {
-    const { sessionId, action, deviceName } = await readBody(req);
+    const { sessionId, action, deviceName, userText } = await readBody(req);
     if (!deviceName) return { status: 400, body: { error: '还没有选择设备' } };
     const name = String(deviceName);
     const filled = {
@@ -302,7 +302,7 @@ const routes = {
       targets: (action?.targets || []).map((item) => ({ ...item, deviceName: item.deviceName || name })),
       actionList: (action?.actionList || []).map((item) => ({ ...item, deviceName: item.deviceName || name })),
     };
-    return turn.finish({ sessionId, action: filled, userText: name });
+    return turn.finish({ sessionId, action: filled, userText: userText || name });
   },
 
   async 'POST /api/confirm'(req) {

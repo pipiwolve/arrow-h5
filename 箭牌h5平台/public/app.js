@@ -165,7 +165,7 @@ async function chooseDevice(action, deviceName, el) {
   const out = await api('/api/choose', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, action, deviceName }),
+    body: JSON.stringify({ sessionId, action, deviceName, userText: lastAsk }),
   });
   el.remove();
   for (const card of out.cards || []) addCard(card);
@@ -435,7 +435,7 @@ $('nav').onclick = (e) => {
   if (btn.dataset.view === 'audit') loadAudit();
 };
 
-const OPERATE = /打开|关闭|开一下|关一下|冲水|大冲|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
+const OPERATE = /打开|关闭|关掉|关上|开一下|关一下|启动|启用|停用|别|冲水|大冲|小冲|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
 const REPAIR = /报修|维修/;
 const TOPIC = /调用了多少|调用次数|多少次|失败了几次|成功了几次|用得最久|使用时长|用了多久|用了多少分钟/;
 const REPAIR_LINK = 'arrowhome://repair/create?from=ai_assistant';
@@ -486,6 +486,10 @@ function showIntent(out) {
   for (const card of out.cards || []) addCard(card);
 }
 
+function rememberAsk(text) {
+  lastAsk = text;
+}
+
 async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
@@ -513,6 +517,7 @@ async function sendText(text) {
     return;
   }
   if (OPERATE.test(value)) {
+    rememberAsk(value);
     addBubble('user', value);
     try {
       showIntent(await api('/api/intent', {
