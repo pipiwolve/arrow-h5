@@ -48,6 +48,8 @@ assert.equal(topicModel('这个月调用了多少次'), 'iot_calls');
 assert.equal(topicModel('哪台用得最久'), 'usage_duration');
 assert.equal(topicModel('把主卫镜柜的夜灯打开'), '');
 assert.equal(visibleAgent('请提供卫浴设备名称（deviceName）和执行动作（cmd）'), '');
+assert.equal(visibleAgent('请提供设备名称和具体操作（如大冲、小冲、夜灯开关等）；其余参数可选。'), '');
+assert.equal(visibleAgent('请提供设备名称和具体指令（如大冲、小冲、夜灯开关等）；其他参数可选提供。'), '');
 assert.equal(visibleAgent('准备打开夜灯。'), '准备打开夜灯。');
 assert.equal(visibleAgent('请告诉我是哪一间卫生间。'), '请告诉我是哪一间卫生间。');
 

@@ -61,7 +61,7 @@ function sameText(a, b) {
 
 // 与 src/roster.mjs 的 ROSTER_MARK、visibleReply、userEcho 一致。
 const ROSTER_MARK = '【家庭设备】';
-const PARAM_CHASE = /deviceName|请提供卫浴设备名称|执行动作/;
+const PARAM_CHASE = /deviceName|请提供设备名称|请提供卫浴设备名称|执行动作|具体指令|其余参数可选|其他参数可选/;
 
 function visibleAgent(text) {
   const value = String(text || '').trim();

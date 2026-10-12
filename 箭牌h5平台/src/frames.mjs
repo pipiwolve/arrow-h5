@@ -160,7 +160,7 @@ export function asrUtterance(text) {
   return value;
 }
 
-const PARAM_CHASE = /deviceName|请提供卫浴设备名称|执行动作/;
+const PARAM_CHASE = /deviceName|请提供设备名称|请提供卫浴设备名称|执行动作|具体指令|其余参数可选|其他参数可选/;
 
 /** 模型向用户索要接口字段名时，这句话不进入对话。 */
 export function visibleAgent(text) {
