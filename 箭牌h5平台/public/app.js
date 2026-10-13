@@ -11,8 +11,6 @@ let agentBubble = null;
 let userBubble = null;
 let sentText = '';
 let connectPromise = null;
-let joinTries = 0;
-let joinTimer = 0;
 let greetTimer = 0;
 let licPassed = false;
 // 按住期间房间回的 [Q] 只进输入框，松手后的最终句也不当作用户已经发出。
@@ -334,11 +332,6 @@ async function onAgentFrame(msg) {
   }
   if (!data.startsWith('[A]:')) return;
   readyToTalk();
-  const liveGen = turns.snapshot().turnGen;
-  if (turns.snapshot().turnKind === 'room' && liveGen && !stale(liveGen)) {
-    clearTimeout(roomTimer);
-    roomTimer = setTimeout(() => releaseRoom(liveGen), 8000);
-  }
   const echoed = localSpeech(text);
   if (echoed) {
     if (!partial) spokenLocal.delete(echoed);
@@ -417,22 +410,7 @@ function armSound() {
 new MutationObserver(() => { if (soundOn) playRoomAudio(); })
   .observe($('therevideo'), { childList: true, subtree: true });
 
-function retryJoin(join, reason) {
-  clearTimeout(joinTimer);
-  if (joinTries < 2 && sessionId) {
-    joinTries += 1;
-    setStatus('进房失败，正在重试');
-    try { if (typeof window.BRTC_Stop === 'function') window.BRTC_Stop(); } catch {}
-    setTimeout(() => startRtc(join), 1500);
-    return;
-  }
-  setStatus('进房失败：' + reason);
-  $('booting').hidden = true;
-  unlockComposer();
-}
-
 function startRtc(join) {
-  clearTimeout(joinTimer);
   window.BRTC_Start(Object.assign({}, join, {
     aspublisher: true,
     usingdatachannel: true,
@@ -448,7 +426,11 @@ function startRtc(join) {
       setRoomMic(false);
     },
     localvideopublished_ok: () => { if (!holding) setRoomMic(false); },
-    error: (error) => retryJoin(join, error),
+    error: (error) => {
+      setStatus('进房失败：' + error);
+      $('booting').hidden = true;
+      unlockComposer();
+    },
     onmessage: (msg) => { onAgentFrame(msg).catch((e) => setStatus(e.message)); },
   }));
 }
@@ -473,7 +455,6 @@ async function startCall() {
   if (sessionId) return;
   if (connectPromise) return connectPromise;
   connectPromise = (async () => {
-    joinTries = 0;
     setStatus('正在创建实例');
     const opened = await api('/api/session', {
       method: 'POST',
@@ -546,7 +527,7 @@ async function openTurn(kind) {
   clearTimeout(roomTimer);
   const gen = await turns.openTurn(kind);
   if (!gen) return 0;
-  if (kind === 'room') roomTimer = setTimeout(() => releaseRoom(gen), 45000);
+  if (kind === 'room') roomTimer = setTimeout(() => releaseRoom(gen), 20000);
   return gen;
 }
 
@@ -608,18 +589,14 @@ async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
   showUser(value);
-  // 上一轮还在领代号、等房间或跑本地意图时，先停播报并结束那一轮。
+  // 上一轮还在领代号或等房间时，先停掉它，再只处理这一句。
   // 用户文字已经留在对话里。只发 [B] 不会让这一句成为新的一轮。
   const shot = turns.snapshot();
   if (shot.turnBusy || shot.turnOpening) {
     stopSpeech();
-    // 房间问答被新句子打断。本地意图和报修仍要处理这一句，只停掉上一句的播报。
-    turns.takeover(value);
-  }
-  if (REPAIR.test(value)) {
-    const gen = await showRepair();
-    if (gen && turns.finishLocal(gen)) releaseRoom(gen);
-    return;
+    if (shot.turnOpening || shot.turnKind === 'room') {
+      turns.takeover(value);
+    }
   }
   if (TOPIC.test(value)) {
     const gen = await openTurn('topic');
@@ -643,6 +620,11 @@ async function sendText(text) {
     }
     return;
   }
+  if (REPAIR.test(value)) {
+    const gen = await showRepair();
+    if (turns.finishLocal(gen)) releaseRoom(gen);
+    return;
+  }
   if (OPERATE.test(value)) {
     const gen = await openTurn('intent');
     rememberAsk(value);
@@ -653,12 +635,11 @@ async function sendText(text) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, text: value, turnGen }),
     }).then((out) => {
-      const dropped = !gen || stale(gen) || turns.snapshot().turnGen !== gen;
-      showIntent({ ...out, superseded: out.superseded || dropped });
+      showIntent({ ...out, superseded: out.superseded || !gen });
     }).catch((e) => {
-      if (gen && !stale(gen) && turns.snapshot().turnGen === gen) addBubble('agent', e.message);
+      if (gen && !stale(gen)) addBubble('agent', e.message);
     }).finally(() => {
-      if (gen && turns.snapshot().turnGen === gen && turns.finishLocal(gen)) releaseRoom(gen);
+      if (gen && turns.finishLocal(gen)) releaseRoom(gen);
     });
     await Promise.race([
       pending,
