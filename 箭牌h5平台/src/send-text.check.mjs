@@ -25,8 +25,17 @@ function makeEl(id) {
     classList: { add() {}, remove() {}, toggle() {} },
     append(...nodes) { this.children.push(...nodes); },
     querySelector() { return null; },
-    querySelectorAll: () => [],
-    remove() {},
+    querySelectorAll(selector) {
+      if (selector === '.bubble.user') {
+        return this.children.filter((node) => String(node.className || '').includes('bubble user'));
+      }
+      return [];
+    },
+    remove() {
+      const list = el('stream').children;
+      const at = list.indexOf(this);
+      if (at >= 0) list.splice(at, 1);
+    },
     scrollIntoView() {},
     addEventListener() {},
   };
@@ -82,6 +91,7 @@ const context = {
   document: documentStub,
   window: {
     BRTC_SendMessageToUser: (frame) => sent.push(frame),
+    isSecureContext: true,
     innerWidth: 1200,
     addEventListener() {},
     visualViewport: null,
@@ -100,8 +110,13 @@ const appSrc = fs.readFileSync(new URL('../public/app.js', import.meta.url), 'ut
   .replace("api('/api/config').then((cfg) => {", 'Promise.resolve({ ready: false, missing: [] }).then((cfg) => {');
 context.createTurnGate = null;
 vm.runInContext(gateSrc, context);
-vm.runInContext(appSrc + '\nglobalThis.__sendText = sendText;\nglobalThis.__session = () => { sessionId = "hs_test"; licPassed = true; };', context);
+vm.runInContext(appSrc + '\nglobalThis.__sendText = sendText;\nglobalThis.__startHold = startHold;\nglobalThis.__stopHold = stopHold;\nglobalThis.__finishDictation = finishDictation;\nglobalThis.__onAgentFrame = onAgentFrame;\nglobalThis.__session = () => { sessionId = "hs_test"; licPassed = true; };', context);
 context.__session();
+
+function nodeText(node) {
+  const textNode = node.children?.find((child) => child.className === 'text');
+  return textNode ? textNode.textContent : node.textContent;
+}
 
 function users() {
   return el('stream').children.flatMap((node) => {
@@ -173,8 +188,96 @@ const flushing = context.__sendText('大冲');
 await new Promise((resolve) => setTimeout(resolve, 30));
 await context.__sendText('我家坐便器不出水了，要报修');
 await flushing;
-const after = el('stream').children.map((node) => `${node.className}:${node.textContent}`).join(' || ');
+const after = el('stream').children.map((node) => `${node.className}:${nodeText(node)}`).join(' || ');
 assert.ok(after.includes('已准备好报修入口'), after);
 assert.ok(sent.some((frame) => frame.includes('[E]:[CMD]:[TEXT]:已准备好报修入口')), sent.join(' | '));
+
+// 按住期间识别结果已经发出时，松手不能再把「识别中」盖回去。
+el('stream').children.length = 0;
+el('composerNote').textContent = '';
+el('composerNote').hidden = true;
+claimDelay = 0;
+context.__startHold();
+context.__finishDictation('关掉马桶的夜灯。');
+await new Promise((resolve) => setTimeout(resolve, 20));
+assert.equal(el('composerNote').hidden, true, el('composerNote').textContent);
+context.__stopHold();
+assert.equal(el('composerNote').hidden, true);
+assert.equal(el('composerNote').textContent, '');
+assert.ok(users().includes('关掉马桶的夜灯。'), users().join(' | '));
+assert.ok(agentLines().includes('有多台设备符合，选一台再下发。'), agentLines().join(' | '));
+assert.equal(agentLines().includes('正在确认设备…'), false, agentLines().join(' | '));
+
+// 房间最终识别句晚于松手到达，也要进入设备确认，不能只留一条用户气泡。
+await context.__onAgentFrame({ data: '[Q]:关掉马桶的夜灯。' });
+el('stream').children.length = 0;
+await context.__onAgentFrame({ data: '[Q]:关掉马桶的夜灯。' });
+assert.deepEqual(users(), ['关掉马桶的夜灯。']);
+assert.ok(agentLines().includes('有多台设备符合，选一台再下发。'), agentLines().join(' | '));
+assert.equal(el('stream').children.some((node) => String(node.className).includes('choose')), true);
+
+// 领代号被下一句作废后，这句设备确认的失败也要留在对话里。
+el('stream').children.length = 0;
+let releaseClaim = null;
+let intentCalls = 0;
+const savedFail = context.__api;
+context.__api = async (path, opts) => {
+  if (path === '/api/turn') {
+    if (!releaseClaim) {
+      return new Promise((resolve) => {
+        releaseClaim = () => resolve({ turnGen: 7 });
+      });
+    }
+    return { turnGen: 8 };
+  }
+  if (path === '/api/intent') {
+    intentCalls += 1;
+    throw new Error('设备列表没有取到');
+  }
+  return savedFail(path, opts);
+};
+const hung = context.__sendText('关掉马桶的夜灯。');
+await new Promise((resolve) => setTimeout(resolve, 10));
+const next = context.__sendText('现在几点');
+await new Promise((resolve) => setTimeout(resolve, 10));
+releaseClaim();
+await Promise.all([hung, next]);
+assert.equal(intentCalls, 1);
+assert.ok(agentLines().some((line) => line.includes('设备列表没有取到')), agentLines().join(' | '));
+assert.equal(agentLines().includes('正在确认设备…'), false, agentLines().join(' | '));
+context.__api = savedFail;
+
+// 识别中间结果先出用户气泡，最终句再替换并进入设备确认。
+el('stream').children.length = 0;
+claimDelay = 0;
+context.__startHold();
+await context.__onAgentFrame({ data: '[Q]:[M]关掉马桶' });
+assert.deepEqual(users(), ['关掉马桶']);
+await context.__onAgentFrame({ data: '[Q]:关掉马桶的夜灯。' });
+assert.deepEqual(users(), ['关掉马桶的夜灯。']);
+assert.ok(agentLines().includes('有多台设备符合，选一台再下发。'), agentLines().join(' | '));
+
+// 设备确认的占位在领代号之前就出现。
+el('stream').children.length = 0;
+claimDelay = 80;
+const early = context.__sendText('关掉马桶的夜灯。');
+await new Promise((resolve) => setTimeout(resolve, 10));
+assert.ok(agentLines().includes('正在确认设备…'), agentLines().join(' | '));
+await early;
+assert.ok(agentLines().includes('有多台设备符合，选一台再下发。'), agentLines().join(' | '));
+assert.equal(agentLines().includes('正在确认设备…'), false);
+
+// 本机接手后，房间的 control_device 得到不播报的结果。
+sent.length = 0;
+await context.__onAgentFrame({
+  data: '[F]:' + JSON.stringify({
+    session_id: 'room-1',
+    content: JSON.stringify({ function_name: 'control_device', parameter_list: [{}] }),
+  }),
+});
+assert.equal(sent.length, 1, sent.join(' | '));
+assert.equal(sent[0].includes('"result":"ok"'), true);
+assert.equal(sent[0].includes('post_function'), false);
+assert.equal(sent[0].includes('room-1'), true);
 
 console.log('send-text ok');

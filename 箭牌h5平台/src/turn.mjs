@@ -144,6 +144,16 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
     return action;
   }
 
+  function loadLive(load) {
+    if (!load) return Promise.resolve({ rows: [] });
+    let timer = 0;
+    const pending = Promise.resolve().then(() => load(false)).finally(() => clearTimeout(timer));
+    const timeout = new Promise((resolve) => {
+      timer = setTimeout(() => resolve({ rows: [], error: '设备列表超时' }), 4000);
+    });
+    return Promise.race([pending, timeout]);
+  }
+
   async function chooseDevice(action, userText) {
     const lists = action.action === 'scene.create'
       ? [action.actionList]
@@ -151,7 +161,7 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
     const known = (name) => trustedName(name, devices);
     const needsPick = lists.flat().some((item) => item && !known(item.deviceName));
     if (!needsPick) return { action };
-    const live = liveDevices ? await liveDevices(false) : { rows: [] };
+    const live = await loadLive(liveDevices);
     const cmd = lists.flat().find((item) => item?.cmd)?.cmd || '';
     const choices = narrowDevices({ devices, live, userText, cmd });
     if (choices.length === 1) {

@@ -16,6 +16,8 @@ let licPassed = false;
 // 按住期间房间回的 [Q] 只进输入框，松手后的最终句也不当作用户已经发出。
 let holding = false;
 let dictating = false;
+let dictationId = 0;
+let dictationTimer = 0;
 let lastAsk = '';
 let roomTimer = 0;
 const spokenLocal = new Set();
@@ -259,8 +261,13 @@ async function onAgentFrame(msg) {
   }
   if (data.startsWith('[F]:')) {
     if (/"result"\s*:/.test(data) && !data.includes('function_name')) return;
-    // 设备指令已由本机处理。房间随后交来的同一次调用没有原话，会把全部设备列出来。
-    if (data.includes('control_device') && Date.now() - localIntentAt < 15000) return;
+    // 设备指令已由本机列出选择。回一个不播报的结果，房间才不会隔一会儿再追问一次。
+    if (data.includes('control_device') && Date.now() - localIntentAt < 60000) {
+      if (typeof window.BRTC_SendMessageToUser === 'function') {
+        window.BRTC_SendMessageToUser(roomControlAck(data));
+      }
+      return;
+    }
     const hold = agentBubble;
     const gen = turns.snapshot().turnGen;
     agentBubble = null;
@@ -298,7 +305,13 @@ async function onAgentFrame(msg) {
     // 按住说话时，房间 ASR 的中间态和最终句都回填输入框，不进对话。
     // 最终句可能晚于松手到达，所以用 dictating 守住这一轮。
     if (dictating) {
-      if (!partial) finishDictation(userEcho(text, '').text);
+      const spoken = userEcho(text, '').text;
+      if (asrUtterance(spoken)) paintLiveUser(spoken, partial);
+      if (!partial) {
+        if (!asrUtterance(spoken) && userBubble?.dataset.pending === '1') userBubble.remove();
+        userBubble = null;
+        await finishDictation(spoken);
+      }
       return;
     }
     // 文字和快捷句已经在本地画过。房间回放整段 [T]，含设备清单。
@@ -323,11 +336,15 @@ async function onAgentFrame(msg) {
       if (!userBubble) userBubble = addBubble('user', spoken);
       bubbleText(userBubble).textContent = spoken;
       userBubble.dataset.live = partial ? '1' : '';
-      if (!partial) userBubble = null;
+      userBubble.dataset.pending = '1';
+      if (!partial) {
+        userBubble = null;
+        await sendText(spoken);
+      }
       return;
     }
     if ([...$('stream').querySelectorAll('.bubble.user')].some((el) => sameText(bubbleText(el).textContent, spoken))) return;
-    addBubble('user', spoken);
+    await sendText(spoken);
     return;
   }
   if (!data.startsWith('[A]:')) return;
@@ -363,6 +380,26 @@ async function onAgentFrame(msg) {
     if (card.event === 'demo.repair') continue;
     addCard(card);
   }
+}
+
+function roomControlAck(frame) {
+  let session = '';
+  try {
+    const outer = JSON.parse(String(frame).replace(/^\[F\]:?/, ''));
+    session = outer.session_id || outer.sessionId || '';
+  } catch {}
+  return '[F]:' + JSON.stringify({
+    session_id: String(session),
+    result: 'ok',
+    message: '已由页面列出设备，请用户点选，不要再追问设备。',
+  });
+}
+
+function paintLiveUser(text, partial) {
+  if (!userBubble || userBubble.dataset.pending !== '1') userBubble = addBubble('user', text);
+  bubbleText(userBubble).textContent = text;
+  userBubble.dataset.live = partial ? '1' : '';
+  userBubble.dataset.pending = '1';
 }
 
 function speakLocal(text) {
@@ -578,6 +615,16 @@ function rememberAsk(text) {
 }
 
 function showUser(value) {
+  const last = [...$('stream').querySelectorAll('.bubble.user')].at(-1) || userBubble;
+  if (last?.dataset.pending === '1') {
+    bubbleText(last).textContent = value;
+    delete last.dataset.pending;
+    last.dataset.local = '1';
+    userBubble = last;
+    sentText = value;
+    lastAsk = value;
+    return userBubble;
+  }
   userBubble = addBubble('user', value);
   userBubble.dataset.local = '1';
   sentText = value;
@@ -626,8 +673,10 @@ async function sendText(text) {
     return;
   }
   if (OPERATE.test(value)) {
-    const gen = await openTurn('intent');
     rememberAsk(value);
+    localIntentAt = Date.now();
+    const pendingBubble = addBubble('agent', '正在确认设备…');
+    const gen = await openTurn('intent');
     // 请求先发出。下一句可以打断这一轮，已经识别出的设备选择卡仍留在页面上。
     const turnGen = gen || -1;
     const pending = api('/api/intent', {
@@ -635,9 +684,17 @@ async function sendText(text) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, text: value, turnGen }),
     }).then((out) => {
+      if (stale(turnGen)) {
+        pendingBubble.remove();
+        addBubble('agent', '上一句还在处理，这句没有完成设备确认。');
+        return;
+      }
+      pendingBubble.remove();
       showIntent({ ...out, superseded: out.superseded || !gen });
+      if (!out.say && !(out.cards || []).length) addBubble('agent', '这一句没有形成可下发的指令。');
     }).catch((e) => {
-      if (gen && !stale(gen)) addBubble('agent', e.message);
+      pendingBubble.remove();
+      addBubble('agent', e.message);
     }).finally(() => {
       if (gen && turns.finishLocal(gen)) releaseRoom(gen);
     });
@@ -726,16 +783,17 @@ function asrUtterance(text) {
   return value;
 }
 
-function finishDictation(text) {
+async function finishDictation(text) {
+  const id = dictationId;
   dictating = false;
   const spoken = asrUtterance(text);
   if (!spoken) {
-    micNote('没听清，按住说完再松开', true);
+    if (id === dictationId) micNote('没听清，按住说完再松开', true);
     return;
   }
   heard = true;
-  micNote('');
-  sendText(spoken);
+  if (id === dictationId) micNote('');
+  await sendText(spoken);
 }
 
 function micNote(text, err) {
@@ -757,6 +815,8 @@ function startHold() {
   holding = true;
   dictating = true;
   heard = false;
+  dictationId += 1;
+  clearTimeout(dictationTimer);
   $('btnMic').classList.add('rec');
   micNote('正在听…');
   clearTimeout(micStopTimer);
@@ -772,14 +832,20 @@ function startHold() {
 function stopHold() {
   if (!holding) return;
   holding = false;
+  const id = dictationId;
   clearTimeout(micTimer);
   clearTimeout(micStopTimer);
+  clearTimeout(dictationTimer);
   $('btnMic').classList.remove('rec');
   sendCmd('[E]:[CMD]:[ASR_STOP_LONGTEXT_REC]');
-  micNote('识别中…');
+  if (id === dictationId && !heard) micNote('识别中…');
   // 先结束识别，再关麦克风，避免尾音被截掉。
   micStopTimer = setTimeout(() => { if (!holding) setRoomMic(false); }, 600);
-  setTimeout(() => { if (dictating && !heard) finishDictation(''); }, 8000);
+  dictationTimer = setTimeout(() => {
+    if (id !== dictationId) return;
+    if (dictating && !heard) finishDictation('');
+    else if (!heard) micNote('');
+  }, 8000);
 }
 
 const micBtn = $('btnMic');

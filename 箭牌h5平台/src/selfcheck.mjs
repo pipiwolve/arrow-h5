@@ -238,4 +238,26 @@ const afterPick = await turn.finish({
 assert.equal(afterPick.cards.some((c) => c.event === 'demo.result' || c.data?.decision === 'allow'), true);
 assert.equal(afterPick.cards.some((c) => /缺少 value/.test(JSON.stringify(c))), false);
 
+const hungList = createTurn({
+  scenario: SCENARIO,
+  devices: DEVICES.devices,
+  gate,
+  iot: { control: async () => ({ ok: true, httpStatus: 200, ms: 1, response: { code: 200, success: true } }) },
+  audit: { append: async () => {} },
+  liveDevices: () => new Promise(() => {}),
+});
+const toiletLight = await Promise.race([
+  hungList.finish({
+    sessionId: 'hs_hang',
+    userText: '关掉马桶的夜灯。',
+    action: { action: 'device.control', targets: [{ deviceName: '', cmd: '', param: '', value: '' }] },
+  }),
+  new Promise((_, reject) => setTimeout(() => reject(new Error('设备列表挂起后没有回退')), 9000)),
+]);
+assert.equal(toiletLight.cards[0].event, 'demo.choose');
+assert.equal(toiletLight.spoken, '有多台设备符合，选一台再下发。');
+assert.equal(toiletLight.cards[0].data.choices.every((d) => d.category === '马桶'), true);
+assert.equal(toiletLight.cards[0].data.action.targets[0].cmd, 'switch_night_light');
+assert.equal(toiletLight.cards[0].data.action.targets[0].value, 'off');
+
 console.log('selfcheck ok');
