@@ -296,9 +296,7 @@ const routes = {
       targets: [{ deviceName: '', cmd: '', param: '', value: '' }],
     };
     const finished = await turn.finish({ sessionId, action, userText });
-    if (turnGen && sessions.currentTurn(sessionId) !== turnGen) {
-      return { superseded: true, cards: [], say: '' };
-    }
+    const superseded = !!(turnGen && sessions.currentTurn(sessionId) !== turnGen);
     if (finished.cards?.length) {
       await journal.appendTurn({ sessionId, turnId: 't_' + Date.now(), cards: finished.cards });
     }
@@ -308,12 +306,17 @@ const routes = {
       : card?.event === 'demo.gate' && card.data?.decision === 'confirm'
         ? '这一步需要你在页面上确认后才会发给平台。'
         : (finished.spoken || finished.receipt || '');
-    return { cards: finished.cards || [], say };
+    return { superseded, cards: finished.cards || [], say };
   },
 
   async 'POST /api/choose'(req) {
-    const { sessionId, action, deviceName, userText } = await readBody(req);
+    const { sessionId, action, deviceName, userText, choiceId } = await readBody(req);
     if (!deviceName) return { status: 400, body: { error: '还没有选择设备' } };
+    const id = String(choiceId || '');
+    if (id) {
+      if (chosenOnce.has(id)) return { status: 409, body: { error: '这张选择卡已经下发过' } };
+      chosenOnce.add(id);
+    }
     const name = String(deviceName);
     const filled = {
       ...action,
@@ -372,6 +375,8 @@ function serveStatic(req, res, pathname) {
   });
   fs.createReadStream(file).pipe(res);
 }
+
+const chosenOnce = new Set();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);

@@ -65,6 +65,7 @@ async function signedPost({ ak, sk, apiHost, path, body }) {
       authorization: bceAuthorization(ak, sk, 'POST', path, headers),
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(12000),
   });
   const text = await res.text();
   let data;

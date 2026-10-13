@@ -9,6 +9,6 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "check": "node src/selfcheck.mjs && node src/turn-gate.check.mjs && node --check server.mjs && node --check public/app.js && node --check public/turn-gate.js"
+    "check": "node src/selfcheck.mjs && node src/turn-gate.check.mjs && node src/send-text.check.mjs && node --check server.mjs && node --check public/app.js && node --check public/turn-gate.js"
   }
 }

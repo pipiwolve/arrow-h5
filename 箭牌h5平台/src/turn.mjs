@@ -102,7 +102,12 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
     if (chosen.choices) {
       cards.push({
         event: 'demo.choose',
-        data: { action: chosen.action, choices: chosen.choices, say: '有多台设备符合，选一台再下发。' },
+        data: {
+          choiceId: 'ch_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          action: chosen.action,
+          choices: chosen.choices,
+          say: '有多台设备符合，选一台再下发。',
+        },
       });
       return { cards, spoken: '有多台设备符合，选一台再下发。' };
     }

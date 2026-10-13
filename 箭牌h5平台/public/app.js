@@ -11,12 +11,16 @@ let agentBubble = null;
 let userBubble = null;
 let sentText = '';
 let connectPromise = null;
+let joinTries = 0;
+let joinTimer = 0;
+let greetTimer = 0;
 let licPassed = false;
 // 按住期间房间回的 [Q] 只进输入框，松手后的最终句也不当作用户已经发出。
 let holding = false;
 let dictating = false;
 let lastAsk = '';
 let roomTimer = 0;
+const spokenLocal = new Set();
 let localIntentAt = 0;
 
 function stopSpeech() {
@@ -153,6 +157,7 @@ function addCard(card) {
     const label = RESULT_LABEL[data.result] || data.result || '';
     el.innerHTML = `<div class="lv">${label}</div><div>${msg}</div>`;
   } else if (card.event === 'demo.choose') {
+    if (data.choiceId) el.dataset.choiceId = data.choiceId;
     el.innerHTML = `<div class="lv">选择设备</div><div>${data.say || '有多台设备符合，选一台再下发。'}</div>`;
     const row = document.createElement('div');
     row.className = 'actions';
@@ -191,16 +196,22 @@ function addCard(card) {
 }
 
 async function chooseDevice(action, deviceName, el) {
+  if (el.dataset.sent) return;
+  el.dataset.sent = '1';
+  el.querySelectorAll('button').forEach((btn) => { btn.disabled = true; });
   const out = await api('/api/choose', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, action, deviceName, userText: lastAsk }),
+    body: JSON.stringify({ sessionId, action, deviceName, userText: lastAsk, choiceId: el.dataset.choiceId }),
   });
   el.remove();
   for (const card of out.cards || []) addCard(card);
 }
 
 async function confirm(pendingId, decision, el) {
+  if (el.dataset.sent) return;
+  el.dataset.sent = '1';
+  el.querySelectorAll('button').forEach((btn) => { btn.disabled = true; });
   const out = await api('/api/confirm', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -241,7 +252,8 @@ async function onAgentFrame(msg) {
     setStatus(passed ? '已连接' : '授权未通过');
     if (passed) {
       armSound();
-      setTimeout(readyToTalk, 8000);
+      clearTimeout(greetTimer);
+      greetTimer = setTimeout(readyToTalk, 3000);
     } else {
       $('booting').hidden = true;
     }
@@ -316,11 +328,22 @@ async function onAgentFrame(msg) {
       if (!partial) userBubble = null;
       return;
     }
+    if ([...$('stream').querySelectorAll('.bubble.user')].some((el) => sameText(bubbleText(el).textContent, spoken))) return;
     addBubble('user', spoken);
     return;
   }
   if (!data.startsWith('[A]:')) return;
   readyToTalk();
+  const liveGen = turns.snapshot().turnGen;
+  if (turns.snapshot().turnKind === 'room' && liveGen && !stale(liveGen)) {
+    clearTimeout(roomTimer);
+    roomTimer = setTimeout(() => releaseRoom(liveGen), 8000);
+  }
+  const echoed = localSpeech(text);
+  if (echoed) {
+    if (!partial) spokenLocal.delete(echoed);
+    return;
+  }
   const gen = turns.snapshot().turnGen;
   if (partial) {
     if (stale(gen)) return;
@@ -347,6 +370,21 @@ async function onAgentFrame(msg) {
     if (card.event === 'demo.repair') continue;
     addCard(card);
   }
+}
+
+function speakLocal(text) {
+  const value = String(text || '').trim();
+  if (!value || typeof window.BRTC_SendMessageToUser !== 'function') return;
+  spokenLocal.add(value);
+  window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + value);
+}
+
+function localSpeech(text) {
+  const value = String(text || '').trim();
+  for (const item of spokenLocal) {
+    if (item === value || item.startsWith(value)) return item;
+  }
+  return '';
 }
 
 function sendCmd(frame) {
@@ -379,7 +417,22 @@ function armSound() {
 new MutationObserver(() => { if (soundOn) playRoomAudio(); })
   .observe($('therevideo'), { childList: true, subtree: true });
 
+function retryJoin(join, reason) {
+  clearTimeout(joinTimer);
+  if (joinTries < 2 && sessionId) {
+    joinTries += 1;
+    setStatus('进房失败，正在重试');
+    try { if (typeof window.BRTC_Stop === 'function') window.BRTC_Stop(); } catch {}
+    setTimeout(() => startRtc(join), 1500);
+    return;
+  }
+  setStatus('进房失败：' + reason);
+  $('booting').hidden = true;
+  unlockComposer();
+}
+
 function startRtc(join) {
+  clearTimeout(joinTimer);
   window.BRTC_Start(Object.assign({}, join, {
     aspublisher: true,
     usingdatachannel: true,
@@ -395,10 +448,7 @@ function startRtc(join) {
       setRoomMic(false);
     },
     localvideopublished_ok: () => { if (!holding) setRoomMic(false); },
-    error: (error) => {
-      setStatus('进房失败：' + error);
-      $('booting').hidden = true;
-    },
+    error: (error) => retryJoin(join, error),
     onmessage: (msg) => { onAgentFrame(msg).catch((e) => setStatus(e.message)); },
   }));
 }
@@ -423,6 +473,7 @@ async function startCall() {
   if (sessionId) return;
   if (connectPromise) return connectPromise;
   connectPromise = (async () => {
+    joinTries = 0;
     setStatus('正在创建实例');
     const opened = await api('/api/session', {
       method: 'POST',
@@ -475,7 +526,7 @@ $('nav').onclick = (e) => {
   if (btn.dataset.view === 'audit') loadAudit();
 };
 
-const OPERATE = /打开|关闭|关掉|关上|开一下|关一下|启动|启用|停用|别|冲水|大冲|小冲|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
+const OPERATE = /打开|关闭|关掉|关上|开一下|关一下|启动|启用|停用|别|冲水|大冲|小冲|^冲$|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
 const REPAIR = /报修|维修/;
 const TOPIC = /调用了多少|调用次数|多少次|失败了几次|成功了几次|用得最久|使用时长|用了多久|用了多少分钟/;
 const REPAIR_LINK = 'arrowhome://repair/create?from=ai_assistant';
@@ -494,27 +545,30 @@ async function openTurn(kind) {
   agentBubble = null;
   clearTimeout(roomTimer);
   const gen = await turns.openTurn(kind);
-  if (kind === 'room') roomTimer = setTimeout(() => releaseRoom(gen), 20000);
+  if (!gen) return 0;
+  if (kind === 'room') roomTimer = setTimeout(() => releaseRoom(gen), 45000);
   return gen;
 }
 
 async function sayToRoom(value) {
   const gen = await openTurn('room');
-  if (stale(gen)) return;
+  const latest = turns.waiting() ? turns.next() : value;
+  if (!gen || stale(gen) || latest !== value) return;
   window.BRTC_SendMessageToUser('[T]:' + value);
   sentText = value;
   lastAsk = value;
-  userBubble = addBubble('user', value);
-  userBubble.dataset.local = '1';
-  userBubble.dataset.gen = String(gen);
+  if (userBubble && sameText(bubbleText(userBubble).textContent, value)) {
+    userBubble.dataset.gen = String(gen);
+  }
 }
 
 async function showRepair() {
   const gen = await openTurn('local');
+  if (!gen) return 0;
   const say = '已准备好报修入口。';
   addBubble('agent', say);
   if (typeof window.BRTC_SendMessageToUser === 'function') {
-    window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + say);
+    speakLocal(say);
   }
   addCard({
     event: 'demo.repair',
@@ -528,12 +582,11 @@ async function showRepair() {
 }
 
 function showIntent(out) {
-  if (out.superseded) return;
   localIntentAt = Date.now();
   if (out.say) {
     addBubble('agent', out.say);
-    if (typeof window.BRTC_SendMessageToUser === 'function') {
-      window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + out.say);
+    if (!out.superseded && typeof window.BRTC_SendMessageToUser === 'function') {
+      speakLocal(out.say);
     }
   }
   for (const card of out.cards || []) addCard(card);
@@ -543,12 +596,30 @@ function rememberAsk(text) {
   lastAsk = text;
 }
 
+function showUser(value) {
+  userBubble = addBubble('user', value);
+  userBubble.dataset.local = '1';
+  sentText = value;
+  lastAsk = value;
+  return userBubble;
+}
+
 async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
+  showUser(value);
+  // 上一轮还在领代号或等房间时，先停掉它，再只处理这一句。
+  // 用户文字已经留在对话里。只发 [B] 不会让这一句成为新的一轮。
+  const shot = turns.snapshot();
+  if (shot.turnBusy || shot.turnOpening) {
+    stopSpeech();
+    if (shot.turnOpening || shot.turnKind === 'room') {
+      turns.takeover(value);
+    }
+  }
   if (TOPIC.test(value)) {
     const gen = await openTurn('topic');
-    addBubble('user', value);
+    if (!gen) return;
     try {
       const out = await api('/api/topic', {
         method: 'POST',
@@ -559,7 +630,7 @@ async function sendText(text) {
       const answer = out.text || '适配层没有返回结论。';
       addBubble('agent', answer);
       if (typeof window.BRTC_SendMessageToUser === 'function') {
-        window.BRTC_SendMessageToUser('[E]:[CMD]:[TEXT]:' + answer);
+        speakLocal(answer);
       }
     } catch (e) {
       if (!stale(gen)) addBubble('agent', e.message);
@@ -569,7 +640,6 @@ async function sendText(text) {
     return;
   }
   if (REPAIR.test(value)) {
-    addBubble('user', value);
     const gen = await showRepair();
     if (turns.finishLocal(gen)) releaseRoom(gen);
     return;
@@ -577,24 +647,23 @@ async function sendText(text) {
   if (OPERATE.test(value)) {
     const gen = await openTurn('intent');
     rememberAsk(value);
-    addBubble('user', value);
-    try {
-      const out = await api('/api/intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, text: value, turnGen: gen }),
-      });
-      if (!stale(gen)) showIntent(out);
-    } catch (e) {
-      if (!stale(gen)) addBubble('agent', e.message);
-    } finally {
-      if (turns.finishLocal(gen)) releaseRoom(gen);
-    }
-    return;
-  }
-  if (turns.snapshot().turnBusy) {
-    turns.enqueue(value);
-    micNote(`上一条说完后继续，还有 ${turns.waiting()} 句`);
+    // 请求先发出。下一句可以打断这一轮，已经识别出的设备选择卡仍留在页面上。
+    const turnGen = gen || -1;
+    const pending = api('/api/intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, text: value, turnGen }),
+    }).then((out) => {
+      showIntent({ ...out, superseded: out.superseded || !gen });
+    }).catch((e) => {
+      if (gen && !stale(gen)) addBubble('agent', e.message);
+    }).finally(() => {
+      if (gen && turns.finishLocal(gen)) releaseRoom(gen);
+    });
+    await Promise.race([
+      pending,
+      new Promise((resolve) => setTimeout(resolve, 250)),
+    ]);
     return;
   }
   if (typeof window.BRTC_SendMessageToUser !== 'function') return;

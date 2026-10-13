@@ -81,4 +81,24 @@ assert.equal(fourth, 4);
 assert.equal(acceptText(fourth, '新问题的回答'), true);
 assert.equal(gate.release(fourth), true);
 
+// 房间还在等回复时，新句子先入队。上一轮被打断后，由页面取出并单独发送。
+const queued = [];
+const roomWait = gate.openTurn('room');
+assert.equal(gate.snapshot().turnOpening, true);
+assert.equal(gate.takeover('AKB1357有哪些功能'), true);
+assert.equal(gate.waiting(), 1);
+assert.equal(gate.snapshot().turnBusy, false);
+const roomGen = await roomWait;
+assert.equal(roomGen, 0, '领代号期间被新句覆盖后，旧领取不能推进代号');
+assert.equal(gate.snapshot().turnOpening, false);
+assert.equal(gate.snapshot().turnBusy, false);
+assert.equal(gate.stale(0), true);
+const queuedText = gate.next();
+assert.equal(queuedText, 'AKB1357有哪些功能');
+queued.push(queuedText);
+const queuedTurn = await gate.openTurn('room');
+assert.equal(acceptText(queuedTurn, 'AKB1357 的产品内容在这里。'), true);
+assert.equal(gate.release(queuedTurn), true);
+assert.deepEqual(queued, ['AKB1357有哪些功能']);
+
 console.log('turn-gate ok');
