@@ -608,14 +608,18 @@ async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
   showUser(value);
-  // 上一轮还在领代号或等房间时，先停掉它，再只处理这一句。
+  // 上一轮还在领代号、等房间或跑本地意图时，先停播报并结束那一轮。
   // 用户文字已经留在对话里。只发 [B] 不会让这一句成为新的一轮。
   const shot = turns.snapshot();
   if (shot.turnBusy || shot.turnOpening) {
     stopSpeech();
-    if (shot.turnOpening || shot.turnKind === 'room') {
-      turns.takeover(value);
-    }
+    // 房间问答被新句子打断。本地意图和报修仍要处理这一句，只停掉上一句的播报。
+    turns.takeover(value);
+  }
+  if (REPAIR.test(value)) {
+    const gen = await showRepair();
+    if (gen && turns.finishLocal(gen)) releaseRoom(gen);
+    return;
   }
   if (TOPIC.test(value)) {
     const gen = await openTurn('topic');
@@ -639,11 +643,6 @@ async function sendText(text) {
     }
     return;
   }
-  if (REPAIR.test(value)) {
-    const gen = await showRepair();
-    if (turns.finishLocal(gen)) releaseRoom(gen);
-    return;
-  }
   if (OPERATE.test(value)) {
     const gen = await openTurn('intent');
     rememberAsk(value);
@@ -654,11 +653,12 @@ async function sendText(text) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, text: value, turnGen }),
     }).then((out) => {
-      showIntent({ ...out, superseded: out.superseded || !gen });
+      const dropped = !gen || stale(gen) || turns.snapshot().turnGen !== gen;
+      showIntent({ ...out, superseded: out.superseded || dropped });
     }).catch((e) => {
-      if (gen && !stale(gen)) addBubble('agent', e.message);
+      if (gen && !stale(gen) && turns.snapshot().turnGen === gen) addBubble('agent', e.message);
     }).finally(() => {
-      if (gen && turns.finishLocal(gen)) releaseRoom(gen);
+      if (gen && turns.snapshot().turnGen === gen && turns.finishLocal(gen)) releaseRoom(gen);
     });
     await Promise.race([
       pending,

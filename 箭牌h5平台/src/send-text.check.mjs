@@ -150,14 +150,31 @@ const button = card.children.flatMap((node) => node.children || []).find((node) 
 assert.equal(card.dataset.choiceId, 'ch_test');
 assert.equal(typeof button.onclick, 'function');
 const clicks = [];
+const savedApi = context.__api;
 context.__api = async (path, opts) => {
-  clicks.push(path + (opts?.body || ''));
-  return { cards: [] };
+  if (path === '/api/choose') {
+    clicks.push(path);
+    return { cards: [] };
+  }
+  return savedApi(path, opts);
 };
 const one = button.onclick();
 const two = button.onclick();
 await Promise.all([one, two]);
 assert.equal(clicks.length, 1, clicks.join('\n'));
 assert.equal(card.dataset.sent, '1');
+context.__api = savedApi;
+
+// 本地意图还在等设备结果时，下一句报修仍要出卡和播报，不能被标成房间句后丢掉。
+el('stream').children.length = 0;
+sent.length = 0;
+claimDelay = 80;
+const flushing = context.__sendText('大冲');
+await new Promise((resolve) => setTimeout(resolve, 30));
+await context.__sendText('我家坐便器不出水了，要报修');
+await flushing;
+const after = el('stream').children.map((node) => `${node.className}:${node.textContent}`).join(' || ');
+assert.ok(after.includes('已准备好报修入口'), after);
+assert.ok(sent.some((frame) => frame.includes('[E]:[CMD]:[TEXT]:已准备好报修入口')), sent.join(' | '));
 
 console.log('send-text ok');
