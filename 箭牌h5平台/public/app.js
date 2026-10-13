@@ -483,7 +483,9 @@ const REPAIR_LINK = 'arrowhome://repair/create?from=ai_assistant';
 function releaseRoom(gen) {
   if (!turns.release(gen)) return;
   clearTimeout(roomTimer);
-  micNote('');
+  const next = turns.next();
+  micNote(turns.waiting() ? `还有 ${turns.waiting()} 句等待发送` : '');
+  if (next) sendText(next);
 }
 
 async function openTurn(kind) {
@@ -562,14 +564,14 @@ async function sendText(text) {
     } catch (e) {
       if (!stale(gen)) addBubble('agent', e.message);
     } finally {
-      turns.finishLocal(gen);
+      if (turns.finishLocal(gen)) releaseRoom(gen);
     }
     return;
   }
   if (REPAIR.test(value)) {
     addBubble('user', value);
     const gen = await showRepair();
-    turns.finishLocal(gen);
+    if (turns.finishLocal(gen)) releaseRoom(gen);
     return;
   }
   if (OPERATE.test(value)) {
@@ -586,8 +588,13 @@ async function sendText(text) {
     } catch (e) {
       if (!stale(gen)) addBubble('agent', e.message);
     } finally {
-      turns.finishLocal(gen);
+      if (turns.finishLocal(gen)) releaseRoom(gen);
     }
+    return;
+  }
+  if (turns.snapshot().turnBusy) {
+    turns.enqueue(value);
+    micNote(`上一条说完后继续，还有 ${turns.waiting()} 句`);
     return;
   }
   if (typeof window.BRTC_SendMessageToUser !== 'function') return;

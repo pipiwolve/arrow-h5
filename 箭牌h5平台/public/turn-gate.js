@@ -6,6 +6,7 @@ function createTurnGate({ claim, breakTurn }) {
   let turnOpening = false;
   let turnBusy = false;
   let turnKind = '';
+  let pending = [];
 
   function stale(gen) {
     return turnOpening || gen !== turnGen;
@@ -27,6 +28,11 @@ function createTurnGate({ claim, breakTurn }) {
     return turnGen;
   }
 
+  function next() {
+    const text = pending.shift();
+    return text || '';
+  }
+
   function release(gen) {
     if (gen != null && stale(gen)) return false;
     if (turnKind !== 'room') return false;
@@ -42,10 +48,17 @@ function createTurnGate({ claim, breakTurn }) {
     return true;
   }
 
+  function enqueue(text) {
+    pending.push(text);
+  }
+
   return {
     openTurn,
     release,
     finishLocal,
+    enqueue,
+    next,
+    waiting: () => pending.length,
     stale,
     snapshot: () => ({ turnGen, turnBusy, turnKind, turnOpening }),
   };
