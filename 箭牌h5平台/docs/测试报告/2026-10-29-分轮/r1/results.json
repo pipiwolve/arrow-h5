@@ -1,0 +1,50 @@
+{
+  "file": "/tmp/kb-rounds/r1.jsonl",
+  "at": "2026-10-29T07:10:55.358Z",
+  "results": [
+    {
+      "id": "W05",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "坐上AKB1357那个圈，最热大概多少度，能调几档",
+      "answer": "座椅温度啊座圈温度最高约39°C，共5档可调。",
+      "ms": 3556,
+      "note": "不说座圈温度怎么调",
+      "pass": false,
+      "missing": [
+        "33"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W11",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "保养",
+      "question": "1357滤芯坏了算不算保修，一般多久得换一次",
+      "answer": "滤芯保修和更换周期啊滤芯不在质保范围，不保修。  \n建议18个月更换一次，按水压和使用频率调整。",
+      "ms": 3784,
+      "note": "带问号的保养问答进房间",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W14",
+      "style": "路由",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q上电不能开机怎么办？",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM上电不能开机时，先看控制板电源插头是否接错或松动，重新接插。  \n控制板不良则更换控制板模块。",
+      "ms": 3204,
+      "note": "故障排查进知识库",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

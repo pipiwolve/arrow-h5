@@ -1,0 +1,1247 @@
+<title>箭牌智家 AI 助手架构</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ============================================================
+   Design plan
+   Color : 沉稳的青绿主调，中性色偏冷，取自水 / 卫浴场景
+   Type  : IBM Plex Sans (拉丁与数字) + 苹方 (中文正文) + IBM Plex Mono (代码/标签)
+   Layout: 左侧目录常驻 + 单栏正文，手机折叠为单列
+   ============================================================ */
+:root {
+  --bg: #FAFAF7;
+  --surface: #FFFFFF;
+  --surface-2: #F1F3EF;
+  --surface-3: #E8ECE7;
+  --fg: #161C1A;
+  --fg-soft: #33413C;
+  --muted: #5C6A64;
+  --line: #DCE2DD;
+  --line-strong: #BFC9C3;
+  --accent: #0E6B60;
+  --accent-ink: #0A4F47;
+  --accent-soft: #E1EFEB;
+  --warn: #8F5510;
+  --warn-soft: #F7EDDC;
+  --danger: #97382F;
+  --danger-soft: #F8E5E3;
+  --ok: #276B4B;
+  --ok-soft: #E2F0E8;
+  --code-bg: #EFF2ED;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1413;
+    --surface: #161D1B;
+    --surface-2: #1D2523;
+    --surface-3: #26302C;
+    --fg: #E6EDE9;
+    --fg-soft: #C4CFCA;
+    --muted: #93A19B;
+    --line: #29332F;
+    --line-strong: #3A4641;
+    --accent: #5AC5B0;
+    --accent-ink: #8FDCCB;
+    --accent-soft: #14322C;
+    --warn: #D8A057;
+    --warn-soft: #302313;
+    --danger: #DA7C70;
+    --danger-soft: #321A17;
+    --ok: #6BC08F;
+    --ok-soft: #142E1E;
+    --code-bg: #1A2220;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1413;
+  --surface: #161D1B;
+  --surface-2: #1D2523;
+  --surface-3: #26302C;
+  --fg: #E6EDE9;
+  --fg-soft: #C4CFCA;
+  --muted: #93A19B;
+  --line: #29332F;
+  --line-strong: #3A4641;
+  --accent: #5AC5B0;
+  --accent-ink: #8FDCCB;
+  --accent-soft: #14322C;
+  --warn: #D8A057;
+  --warn-soft: #302313;
+  --danger: #DA7C70;
+  --danger-soft: #321A17;
+  --ok: #6BC08F;
+  --ok-soft: #142E1E;
+  --code-bg: #1A2220;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.shell { max-width: 1180px; margin: 0 auto; }
+
+/* ---------- masthead ---------- */
+.masthead {
+  border-bottom: 1px solid var(--line);
+  padding-block: 44px 32px;
+  margin-bottom: 8px;
+}
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+  font-weight: 500;
+}
+.masthead h1 {
+  font-size: clamp(27px, 4.2vw, 40px);
+  line-height: 1.24;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+.lede {
+  font-size: 17px;
+  color: var(--fg-soft);
+  max-width: 62ch;
+  margin: 0 0 24px;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface);
+  white-space: nowrap;
+}
+.chip b { color: var(--fg-soft); font-weight: 500; }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 214px minmax(0, 1fr);
+  gap: 56px;
+  padding-block: 40px 72px;
+}
+.toc { align-self: start; position: sticky; top: 28px; }
+.toc-title {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.toc a {
+  display: block;
+  padding: 5px 10px 5px 12px;
+  border-left: 2px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.toc a:hover { color: var(--fg); border-left-color: var(--line-strong); }
+.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc .num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--line-strong);
+  margin-right: 7px;
+}
+
+.doc { min-width: 0; }
+.doc section { margin-bottom: 64px; scroll-margin-top: 24px; }
+.doc section:last-child { margin-bottom: 0; }
+
+h2 {
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  text-wrap: balance;
+}
+h2 .h2num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--accent);
+  margin-right: 10px;
+  letter-spacing: 0.06em;
+}
+h3 {
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  margin: 34px 0 10px;
+  color: var(--fg);
+}
+h3:first-of-type { margin-top: 24px; }
+p { margin: 0 0 14px; max-width: 70ch; }
+.doc > section > p:first-of-type { margin-top: 18px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; max-width: 70ch; }
+li { margin-bottom: 6px; }
+li::marker { color: var(--muted); }
+strong { font-weight: 600; color: var(--fg); }
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  color: var(--fg-soft);
+  white-space: nowrap;
+}
+a { color: var(--accent); }
+
+/* ---------- stat strip ---------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 22px 0 26px;
+}
+.stat { background: var(--surface); padding: 16px 16px 14px; }
+.stat .n {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1.2;
+  display: block;
+}
+.stat .n small { font-size: 12px; color: var(--muted); margin-left: 3px; font-weight: 400; }
+.stat .k { font-size: 12px; color: var(--muted); margin-top: 5px; display: block; }
+
+/* ---------- tables ---------- */
+.tw { overflow-x: auto; margin: 16px 0 22px; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 460px; }
+thead th {
+  text-align: left;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--fg-soft);
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
+tbody td:first-child { color: var(--fg); }
+td code { white-space: nowrap; }
+
+/* ---------- code ---------- */
+pre.code {
+  margin: 16px 0 22px;
+  padding: 16px 18px;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--fg-soft);
+  tab-size: 2;
+}
+pre.code code { background: none; padding: 0; font-size: inherit; white-space: pre; }
+pre.code .c { color: var(--muted); }
+
+/* ---------- callouts ---------- */
+.note {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 14px 18px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0 22px;
+  font-size: 14.5px;
+  color: var(--fg-soft);
+}
+.note p:last-child { margin-bottom: 0; }
+.note .lbl {
+  display: block;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.note.warn .lbl { color: var(--warn); }
+.note.warn, .note.warn .lbl { }
+
+/* ---------- badges ---------- */
+.badge {
+  display: inline-block;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.b-ok { background: var(--ok-soft); color: var(--ok); }
+.b-warn { background: var(--warn-soft); color: var(--warn); }
+.b-bad { background: var(--danger-soft); color: var(--danger); }
+.b-neutral { background: var(--surface-3); color: var(--muted); }
+
+/* ---------- figures ---------- */
+figure { margin: 22px 0 26px; }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+figcaption {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 10px;
+  padding-left: 2px;
+  max-width: 68ch;
+}
+
+/* ---------- branch diagram (html) ---------- */
+.branches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+.branch {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 13px 14px;
+  min-width: 0;
+}
+.branch .src {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 6px;
+}
+.branch .desc { font-size: 13px; color: var(--fg-soft); margin: 0; line-height: 1.55; }
+.converge {
+  text-align: center;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 8px 0 2px;
+}
+.gatebox {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 8px;
+  text-align: center;
+  padding: 13px;
+  font-size: 14px;
+  color: var(--accent-ink);
+}
+.gatebox b { font-weight: 600; }
+.outcomes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.outcome {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-size: 13px;
+  background: var(--surface);
+}
+.outcome .t { font-weight: 600; display: block; margin-bottom: 3px; font-size: 13px; }
+.outcome.allow { border-left: 3px solid var(--ok); }
+.outcome.confirm { border-left: 3px solid var(--warn); }
+.outcome.deny { border-left: 3px solid var(--danger); }
+.outcome .t.allow { color: var(--ok); }
+.outcome .t.confirm { color: var(--warn); }
+.outcome .t.deny { color: var(--danger); }
+.outcome p { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+
+/* ---------- footer ---------- */
+.foot {
+  border-top: 1px solid var(--line);
+  padding-block: 24px 40px;
+  font-size: 12.5px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+.foot span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; gap: 0; padding-block: 20px 56px; }
+  .toc {
+    position: static;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 40px;
+    background: var(--surface);
+  }
+  .toc ol { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2px 12px; }
+  .masthead { padding-block: 32px 26px; }
+}
+@media (max-width: 640px) {
+  .branches, .outcomes { grid-template-columns: 1fr; }
+  h2 { font-size: 20px; }
+  body { font-size: 15.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="shell">
+
+<header class="masthead">
+  <p class="eyebrow">架构说明 · arrow-brtc-h5 v0.1.0</p>
+  <h1>箭牌智家 AI 助手架构</h1>
+  <p class="lede">基于百度智能云 BRTC 互动智能体的 H5 接入方案。浏览器负责通话与界面，Node 服务承担会话授权、指令解析、安全闸门与设备下发。AK/SK 与 lickey 不出服务进程。</p>
+  <div class="chips">
+    <span class="chip"><b>传输</b> BRTC 互动智能体</span>
+    <span class="chip"><b>服务</b> Node ≥ 22 · 原生 http</span>
+    <span class="chip"><b>家庭</b> homeId 933</span>
+    <span class="chip"><b>文档日期</b> 2026-10-26</span>
+  </div>
+</header>
+
+<div class="layout">
+
+<nav class="toc" aria-label="目录">
+  <p class="toc-title">目录</p>
+  <ol>
+    <li><a href="#overview"><span class="num">01</span>一页概览</a></li>
+    <li><a href="#boundary"><span class="num">02</span>系统定位与边界</a></li>
+    <li><a href="#topology"><span class="num">03</span>总体架构</a></li>
+    <li><a href="#modules"><span class="num">04</span>组件清单</a></li>
+    <li><a href="#connect"><span class="num">05</span>建连与授权激活</a></li>
+    <li><a href="#turn"><span class="num">06</span>一轮对话</a></li>
+    <li><a href="#intent"><span class="num">07</span>指令的三条入口</a></li>
+    <li><a href="#gate"><span class="num">08</span>安全闸门</a></li>
+    <li><a href="#orchestration"><span class="num">09</span>回合编排与打断</a></li>
+    <li><a href="#storage"><span class="num">10</span>数据与存储</a></li>
+    <li><a href="#http"><span class="num">11</span>HTTP 接口</a></li>
+    <li><a href="#external"><span class="num">12</span>外部集成与配置</a></li>
+    <li><a href="#frontend"><span class="num">13</span>前端架构</a></li>
+    <li><a href="#deploy"><span class="num">14</span>部署与运行</a></li>
+    <li><a href="#limits"><span class="num">15</span>已知限制</a></li>
+    <li><a href="#glossary"><span class="num">16</span>术语表</a></li>
+  </ol>
+</nav>
+
+<main class="doc">
+
+<!-- ============ 01 ============ -->
+<section id="overview">
+  <h2><span class="h2num">01</span>一页概览</h2>
+  <p>系统由三块组成：一个浏览器页面、一个 Node 进程、以及三个外部服务。页面不持有任何账号密钥，所有需要密钥的操作都在 Node 进程完成。房间返回的「想做什么」只是意图，能不能真正打到设备上由本地闸门决定。</p>
+
+  <div class="stats">
+    <div class="stat"><span class="n">17</span><span class="k">HTTP 路由</span></div>
+    <div class="stat"><span class="n">8</span><span class="k">指令类型</span></div>
+    <div class="stat"><span class="n">11</span><span class="k">演示设备</span></div>
+    <div class="stat"><span class="n">4</span><span class="k">闸门检查</span></div>
+    <div class="stat"><span class="n">3</span><span class="k">云端依赖</span></div>
+    <div class="stat"><span class="n">4.1<small>k</small></span><span class="k">代码行数</span></div>
+  </div>
+
+  <h3>三条设计主线</h3>
+  <ul>
+    <li><strong>密钥边界</strong>：<code>BRTC_AK</code>、<code>BRTC_SK</code>、<code>BRTC_LICKEY</code> 只存在于 Node 进程。浏览器拿到的是本次通话的进房 token、房间名和 uid。</li>
+    <li><strong>意图与执行分离</strong>：模型在房间里说「打开夜灯」不算执行。动作要经 <code>src/frames.mjs</code> 收成结构化 action，再经 <code>src/policy.mjs</code> 四道检查，放行后才打 IoT。</li>
+    <li><strong>回合可作废</strong>：每句输入领取一个回合代号。用户说下一句时，上一句还在路上的字幕、播报和卡片全部按代号丢弃，不会串到新对话里。</li>
+  </ul>
+
+  <div class="note">
+    <span class="lbl">当前形态</span>
+    <p>这是一个可运行的技术验证骨架，不是生产系统。设备控制主线已经跑通真实 UAT，但 HTTP 接口本身没有鉴权，存储是本地 JSON 文件，多实例部署还不成立。详见 <a href="#limits">15 已知限制</a>。</p>
+  </div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="boundary">
+  <h2><span class="h2num">02</span>系统定位与边界</h2>
+  <p>需求说明书要求把助手嵌进箭牌智家 App。当前这一版先做 WebView 可承载的独立 H5，把业务能力跑通，集成形态留给后续评审。</p>
+
+  <h3>本版做什么</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>能力</th><th>实现方式</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>设备控制</td><td>语音或文字 → 意图解析 → 安全闸门 → 箭牌 IoT</td><td><span class="badge b-ok">已跑通</span></td></tr>
+        <tr><td>场景创建</td><td><code>create_scene</code> 意图 → <code>POST /ext/v3/ai/scene</code></td><td><span class="badge b-warn">链路在，未联调</span></td></tr>
+        <tr><td>产品百科</td><td>问句送进房间，由控制台知识库作答</td><td><span class="badge b-warn">依赖平台</span></td></tr>
+        <tr><td>报修引导</td><td>本地识别 → 卡片 + <code>arrowhome://</code> deeplink</td><td><span class="badge b-ok">已跑通</span></td></tr>
+        <tr><td>安全闸门</td><td>四级判定 + 二次确认 + 审计留痕</td><td><span class="badge b-ok">已跑通</span></td></tr>
+        <tr><td>多智能体调度</td><td>未实现，仅数据统计单点分流</td><td><span class="badge b-bad">未开始</span></td></tr>
+        <tr><td>App 原生集成</td><td>SDK 封装、登录态传递均未做</td><td><span class="badge b-bad">未开始</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>明确不做的事</h3>
+  <ul>
+    <li>不创建售后工单。报修只提供跳转入口，工单闭环留在 App 侧。</li>
+    <li>不落地知识库文件。切片、向量检索、回答边界全部由百度控制台的知识库意图承担，仓库内没有检索代码。</li>
+    <li>不保存用户身份。页面没有登录体系，审计里的操作人恒为 <code>app-user</code>。</li>
+    <li>不接管 BRTC 自身的语音能力。ASR、TTS、大模型全部由房间侧完成，本服务只处理文字帧。</li>
+  </ul>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="topology">
+  <h2><span class="h2num">03</span>总体架构</h2>
+  <p>浏览器与 Node 服务之间有两条边，浏览器与 BRTC 之间还有一条不经过本服务的直连边。后者是音频流和字幕帧的通路，也是这条架构里最容易被忽略的部分：<strong>语音并不流经我们的服务</strong>。</p>
+
+  <figure>
+    <svg viewBox="0 0 1000 560" role="img" aria-label="系统分层拓扑：浏览器、Node 服务、外部系统三层，浏览器与 BRTC 之间有独立的音视频直连通路">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="ar-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+        </marker>
+        <marker id="ar-dashed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/>
+        </marker>
+      </defs>
+
+      <!-- Browser band -->
+      <rect x="40" y="40" width="720" height="100" rx="10" fill="var(--surface)" stroke="var(--line-strong)"/>
+      <text x="60" y="66" font-size="11" font-family="IBM Plex Mono, monospace" letter-spacing="1.2" fill="var(--muted)">浏览器 · PUBLIC/</text>
+
+      <rect x="58" y="78" width="204" height="44" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="160" y="98" text-anchor="middle" font-size="12.5" fill="var(--fg)">对话界面</text>
+      <text x="160" y="113" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">app.js</text>
+
+      <rect x="274" y="78" width="190" height="44" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="369" y="98" text-anchor="middle" font-size="12.5" fill="var(--fg)">回合闸门</text>
+      <text x="369" y="113" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">turn-gate.js</text>
+
+      <rect x="476" y="78" width="266" height="44" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="609" y="98" text-anchor="middle" font-size="12.5" fill="var(--fg)">BRTC H5 SDK 1.2.18</text>
+      <text x="609" y="113" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">官方 CDN 加载</text>
+
+      <!-- browser <-> node arrows -->
+      <line x1="250" y1="140" x2="250" y2="204" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#ar-accent)"/>
+      <text x="240" y="168" text-anchor="end" font-size="11" fill="var(--muted)">POST /api/*</text>
+      <line x1="470" y1="204" x2="470" y2="144" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#ar-accent)"/>
+      <text x="480" y="180" font-size="11" fill="var(--muted)">卡片 · 解析结果 · 回执帧</text>
+
+      <!-- Node band -->
+      <rect x="40" y="210" width="720" height="150" rx="10" fill="var(--surface)" stroke="var(--line-strong)"/>
+      <text x="60" y="236" font-size="11" font-family="IBM Plex Mono, monospace" letter-spacing="1.2" fill="var(--muted)">NODE 服务 · SERVER.MJS</text>
+
+      <rect x="58" y="248" width="128" height="40" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="122" y="273" text-anchor="middle" font-size="12" fill="var(--fg)">HTTP 路由</text>
+
+      <rect x="198" y="248" width="140" height="40" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="268" y="267" text-anchor="middle" font-size="12" fill="var(--fg)">会话与授权</text>
+      <text x="268" y="281" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">session / aiagent</text>
+
+      <rect x="350" y="248" width="120" height="40" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="410" y="273" text-anchor="middle" font-size="12" fill="var(--fg)">帧解析</text>
+
+      <rect x="482" y="248" width="120" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="542" y="273" text-anchor="middle" font-size="12" fill="var(--accent-ink)" font-weight="600">安全闸门</text>
+
+      <rect x="614" y="248" width="128" height="40" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="678" y="273" text-anchor="middle" font-size="12" fill="var(--fg)">IoT 客户端</text>
+
+      <rect x="58" y="300" width="290" height="40" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="203" y="319" text-anchor="middle" font-size="12" fill="var(--fg)">指令补全与设备消歧</text>
+      <text x="203" y="333" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">resolve / turn</text>
+
+      <rect x="360" y="300" width="382" height="40" rx="6" fill="var(--surface-2)" stroke="var(--line)"/>
+      <text x="551" y="319" text-anchor="middle" font-size="12" fill="var(--fg)">审计与卡片流水</text>
+      <text x="551" y="333" text-anchor="middle" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">audit.jsonl / cards.jsonl</text>
+
+      <!-- external row -->
+      <rect x="58" y="440" width="230" height="76" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+      <text x="173" y="466" text-anchor="middle" font-size="12.5" fill="var(--fg)">箭牌 IoT UAT</text>
+      <text x="173" y="483" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">device-list / control</text>
+      <text x="173" y="498" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">/ scene</text>
+
+      <rect x="320" y="440" width="250" height="76" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+      <text x="445" y="466" text-anchor="middle" font-size="12.5" fill="var(--fg)">统计适配层</text>
+      <text x="445" y="483" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">OpenAI 兼容接口</text>
+      <text x="445" y="498" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">→ DuMate Agent</text>
+
+      <rect x="612" y="430" width="316" height="96" rx="8" fill="var(--surface)" stroke="var(--line-strong)"/>
+      <text x="770" y="458" text-anchor="middle" font-size="12.5" fill="var(--fg)">百度智能云 BRTC 互动智能体</text>
+      <text x="770" y="476" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">ASR · TTS · 大模型 · 控制台知识库</text>
+      <text x="770" y="492" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">generateAIAgentCall（BCE v3 签名）</text>
+      <text x="770" y="510" text-anchor="middle" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">人设由控制台自定义角色绑定</text>
+
+      <!-- node -> iot -->
+      <line x1="173" y1="360" x2="173" y2="434" stroke="var(--fg)" stroke-width="1.4" marker-end="url(#ar)"/>
+      <text x="183" y="400" font-size="11" fill="var(--muted)">下发指令 · 取设备列表</text>
+
+      <!-- node -> adapter -->
+      <line x1="445" y1="360" x2="445" y2="434" stroke="var(--fg)" stroke-width="1.4" marker-end="url(#ar)"/>
+      <text x="455" y="400" font-size="11" fill="var(--muted)">/api/topic 转发</text>
+
+      <!-- node -> brtc control plane -->
+      <path d="M 678 288 L 678 400 L 700 400 L 700 424" fill="none" stroke="var(--fg)" stroke-width="1.4" marker-end="url(#ar)"/>
+      <text x="690" y="414" font-size="11" fill="var(--muted)">建实例 · 停实例</text>
+
+      <!-- browser -> brtc direct (right gutter) -->
+      <path d="M 760 100 L 850 100 L 850 424" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ar-accent)"/>
+      <text x="860" y="250" font-size="11" fill="var(--accent)">音频流</text>
+      <text x="860" y="266" font-size="11" fill="var(--accent)">+ 字幕帧</text>
+      <text x="860" y="282" font-size="10.5" fill="var(--muted)">直连，不过 Node</text>
+
+      <!-- secret boundary -->
+      <rect x="32" y="202" width="736" height="166" rx="12" fill="none" stroke="var(--danger)" stroke-width="1.2" stroke-dasharray="5 5" opacity="0.75"/>
+      <text x="56" y="392" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--danger)">密钥边界：AK / SK / LICKEY 只在此框内</text>
+    </svg>
+    <figcaption>虚线框是密钥边界。浏览器与 Node 走 HTTP API，与 BRTC 走音视频直连；Node 只对 BRTC 做控制面操作，对 IoT 做数据面下发。</figcaption>
+  </figure>
+
+  <h3>部署拓扑</h3>
+  <p>当前是单进程单实例，没有反向代理、没有 TLS、没有数据库。Node 进程同时承担 HTTP 服务、会话状态、闸门判定和审计落盘；<code>IOT_MODE=mock</code> 时还会在 <code>127.0.0.1:18901</code> 起一个本地模拟网关。</p>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="modules">
+  <h2><span class="h2num">04</span>组件清单</h2>
+  <p>仓库按职责切成小模块，每个模块单一入口函数返回一个对象，没有框架依赖。下表按数据流向排列。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>文件</th><th>职责</th><th>对外</th></tr></thead>
+      <tbody>
+        <tr><td><code>scenario.mjs</code></td><td>加载 <code>config/scenario.json</code>，解析设备清单 fixture 路径并做必填校验</td><td><code>SCENARIO</code> <code>DEVICES</code> <code>ROOT</code></td></tr>
+        <tr><td><code>src/env.mjs</code></td><td>解析 <code>.env</code>，进程环境变量优先覆盖</td><td><code>loadEnv()</code></td></tr>
+        <tr><td><code>src/aiagent.mjs</code></td><td>BCE v3 签名、建实例、停实例、拼 <code>[E]:[LIC]:[ACTIVE]</code> 帧</td><td><code>generateCall</code> <code>stopCall</code> <code>licActiveFrame</code> <code>agentConfig</code></td></tr>
+        <tr><td><code>src/session.mjs</code></td><td>通话记录、授权状态机、回合代号发号</td><td><code>open</code> <code>activate</code> <code>markLic</code> <code>beginTurn</code></td></tr>
+        <tr><td><code>src/frames.mjs</code></td><td>数据通道帧分类、函数调用解析、iot 块摘取、可见性过滤</td><td><code>classifyFrame</code> <code>actionFromCall</code> <code>extractAction</code></td></tr>
+        <tr><td><code>src/resolve.mjs</code></td><td>设备消歧、指令补全、参数值与开关值推断</td><td><code>narrowDevices</code> <code>completeItem</code> <code>fillTargets</code></td></tr>
+        <tr><td><code>src/policy.mjs</code></td><td>四道检查、风险分级、待确认动作生命周期</td><td><code>evaluate</code> <code>claim</code> <code>settle</code> <code>reject</code></td></tr>
+        <tr><td><code>src/turn.mjs</code></td><td>一轮收尾：补全 → 消歧 → 过闸 → 执行 → 出卡</td><td><code>finish</code> <code>confirm</code></td></tr>
+        <tr><td><code>src/iot-client.mjs</code></td><td>箭牌 IoT 三个接口，统一错误与耗时记录</td><td><code>deviceList</code> <code>control</code> <code>createScene</code></td></tr>
+        <tr><td><code>src/roster.mjs</code></td><td>生成设备事实清单，过滤模型照抄的清单与复读</td><td><code>buildRole</code> <code>visibleReply</code> <code>userEcho</code></td></tr>
+        <tr><td><code>src/audit.mjs</code></td><td>审计追加与脱敏，密钥字段替换为 <code>***</code></td><td><code>createAudit</code> <code>redact</code></td></tr>
+        <tr><td><code>src/journal.mjs</code></td><td>卡片流水，闸门卡与执行卡不在字幕里，靠它回放</td><td><code>appendTurn</code> <code>bySession</code></td></tr>
+        <tr><td><code>src/topic.mjs</code></td><td>数据统计话题匹配，从回答里拆出 HTML 报告</td><td><code>topicModel</code> <code>topicView</code></td></tr>
+        <tr><td><code>src/store.mjs</code></td><td>本地 JSON / JSONL 读写，同步 IO</td><td><code>createStore</code></td></tr>
+        <tr><td><code>server.mjs</code></td><td>HTTP 路由、静态资源、设备列表 20 秒缓存</td><td>17 条路由</td></tr>
+        <tr><td><code>public/turn-gate.js</code></td><td>页面侧回合状态机，被页面和测试共用</td><td><code>createTurnGate</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="connect">
+  <h2><span class="h2num">05</span>建连与授权激活</h2>
+  <p>官方 H5 示例把 AK/SK 放在浏览器里直接调 <code>generateAIAgentCall</code>。本实现改成服务端建实例，页面只拿进房参数。授权是网关主动推来的，页面把原文交回服务端，由服务端拼激活帧。</p>
+
+  <figure>
+    <svg viewBox="0 0 920 620" role="img" aria-label="建连与授权激活时序：页面请求会话，服务端签名建实例，网关推送授权要求，服务端拼激活帧，网关回 PASS">
+      <defs>
+        <marker id="sq-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- participant headers -->
+      <rect x="40" y="20" width="180" height="46" rx="7" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+      <text x="130" y="48" text-anchor="middle" font-size="13" fill="var(--fg)">浏览器页面</text>
+
+      <rect x="370" y="20" width="180" height="46" rx="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="460" y="48" text-anchor="middle" font-size="13" fill="var(--accent-ink)" font-weight="600">Node 服务</text>
+
+      <rect x="700" y="20" width="180" height="46" rx="7" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+      <text x="790" y="48" text-anchor="middle" font-size="13" fill="var(--fg)">BRTC 网关</text>
+
+      <!-- lifelines -->
+      <line x1="130" y1="66" x2="130" y2="580" stroke="var(--line-strong)" stroke-width="1"/>
+      <line x1="460" y1="66" x2="460" y2="580" stroke="var(--line-strong)" stroke-width="1"/>
+      <line x1="790" y1="66" x2="790" y2="580" stroke="var(--line-strong)" stroke-width="1"/>
+
+      <!-- msgs -->
+      <line x1="130" y1="100" x2="456" y2="100" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="94" font-size="11" fill="var(--fg-soft)">GET /api/config</text>
+
+      <line x1="460" y1="138" x2="134" y2="138" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="132" font-size="11" fill="var(--muted)">ready · starters · sayhi · homeId</text>
+
+      <line x1="130" y1="182" x2="456" y2="182" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="176" font-size="11" fill="var(--fg-soft)">POST /api/session</text>
+
+      <line x1="460" y1="220" x2="786" y2="220" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="470" y="214" font-size="11" fill="var(--accent)">generateAIAgentCall（ak/sk 签名）</text>
+
+      <line x1="790" y1="258" x2="464" y2="258" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="470" y="252" font-size="11" fill="var(--muted)">instanceId · token · uid · appid</text>
+
+      <line x1="460" y1="296" x2="134" y2="296" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="290" font-size="11" fill="var(--muted)">session · licFrame · join 参数</text>
+
+      <line x1="130" y1="340" x2="786" y2="340" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="334" font-size="11" fill="var(--accent)">BRTC_Start(join) 进房</text>
+
+      <line x1="790" y1="378" x2="134" y2="378" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="372" font-size="11" fill="var(--fg-soft)">[E]:[LIC]:[MUST]</text>
+
+      <line x1="130" y1="416" x2="456" y2="416" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="410" font-size="11" fill="var(--muted)">POST /api/session/lic</text>
+
+      <line x1="460" y1="454" x2="134" y2="454" stroke="var(--fg)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="448" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--fg-soft)">[E]:[LIC]:[ACTIVE]:{devId,uId,licKey}</text>
+
+      <line x1="130" y1="492" x2="786" y2="492" stroke="var(--accent)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="486" font-size="11" fill="var(--accent)">回发 ACTIVE 帧到数据通道</text>
+
+      <line x1="790" y1="530" x2="134" y2="530" stroke="var(--ok)" stroke-width="1.3" marker-end="url(#sq-ar)"/>
+      <text x="140" y="524" font-size="11" fill="var(--ok)">[E]:[LIC]:[RES]:[PASS]</text>
+
+      <!-- note -->
+      <text x="140" y="566" font-size="11" fill="var(--muted)">PASS 之前收到的 [Q] / [A] 一律不处理</text>
+    </svg>
+    <figcaption>授权是网关发起的挑战应答。lickey 只在第 11 步由服务端拼进帧里，页面从头到尾看不到它。</figcaption>
+  </figure>
+
+  <h3>为什么要固定 devId</h3>
+  <p>后端按 <code>licenseKey + appId + deviceId</code> 计一次激活。每次换 <code>BRTC_DEVID</code> 都会算作一台新设备，持续消耗授权额度。<code>.env.example</code> 里把它写成固定值 <code>DEVID-ARROW-H5-0001</code>，就是为了这个。</p>
+
+  <h3>签名细节</h3>
+  <p>BCE v3 签名要求 <code>host</code> 与 <code>content-type</code> 显式参与签名，否则网关卡在 <code>Signature does not match</code>。签名有效期 1800 秒。示例网关 <code>ai.agent.kaywang.cn</code> 不认这个 AppID，会回 <code>No such app</code>，所以走正式域名 <code>rtc-aiagent.baidubce.com</code>。</p>
+
+  <h3>人设位置</h3>
+  <p>建实例时不传 <code>sceneRoleCfg</code>。人设由百度控制台绑定到该 AppID 的自定义角色提供，避免每次建实例把它覆盖掉。建实例时只带语音相关参数：中文、热词表、按键长语音模式、开场白文本。</p>
+
+<pre class="code"><code><span class="c">// src/aiagent.mjs · agentConfig()</span>
+{
+  lang: 'zh',
+  tag: 'H5.SDK',
+  tts_end_delay_ms: 20,
+  asr_long_audio_mode: true,   <span class="c">// 按键说话，按住才收音</span>
+  disable_voice_auto_int: true,
+  hotwords: '大冲,小冲,冲水,夜灯,自动翻盖,...',
+  tts_sayhi: '你好，我是箭牌智家助手。...'
+}</code></pre>
+
+  <h3>授权状态机</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>状态</th><th>触发</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>pending</code></td><td>会话建立</td><td>实例已建，等待网关推 MUST</td></tr>
+        <tr><td><code>activating</code></td><td>收到 MUST，返回 ACTIVE 帧</td><td>激活帧已发出，等网关裁决</td></tr>
+        <tr><td><code>pass</code></td><td>收到 <code>[RES]:[PASS]</code></td><td>开始处理字幕，3 秒后解锁输入</td></tr>
+        <tr><td><code>fail</code></td><td>收到 <code>[RES]:[FAILED]</code></td><td>隐藏加载态，输入框保持禁用</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="turn">
+  <h2><span class="h2num">06</span>一轮对话</h2>
+  <p>一轮对话的数据流分两段：浏览器到 Node（HTTP），Node 到房间（数据通道）。语音输入多一步本机 ASR 收尾，但最终都汇到同一个 <code>sendText</code> 分流函数。</p>
+
+  <h3>语音输入时序</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>时刻</th><th>动作</th><th>延时</th></tr></thead>
+      <tbody>
+        <tr><td>按下麦克风</td><td>打开房间麦克风</td><td>—</td></tr>
+        <tr><td>按下后</td><td>发送 <code>[E]:[CMD]:[ASR_START_LONGTEXT_REC]</code></td><td>200 ms</td></tr>
+        <tr><td>按住期间</td><td>房间回 <code>[Q]:[M]</code> 中间态，逐字更新同一条用户气泡</td><td>流式</td></tr>
+        <tr><td>松开</td><td>发送 <code>ASR_STOP_LONGTEXT_REC</code></td><td>立即</td></tr>
+        <tr><td>松开后</td><td>关闭房间麦克风</td><td>600 ms</td></tr>
+        <tr><td>松开后</td><td>等最终 <code>[Q]</code>，超时则提示「没听清」</td><td>8000 ms</td></tr>
+        <tr><td>按住上限</td><td>到点自动结束录音</td><td>55 s</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>先开麦再开识别，是为了避免房间录到一段静音。停识别后等 600 ms 再关麦，是为了不截掉尾音。</p>
+
+  <h3>sendText 的四个分支</h3>
+  <p>页面拿到一句话后按固定顺序做正则分流，命中即停。这个顺序决定了报修不会被设备指令抢先接走。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>顺序</th><th>匹配</th><th>去向</th><th>是否进房间</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>数据统计话题</td><td><code>POST /api/topic</code> → 适配层</td><td>否</td></tr>
+        <tr><td>2</td><td>报修 / 维修</td><td>本地渲染报修卡 + deeplink</td><td>否</td></tr>
+        <tr><td>3</td><td>设备操作动词</td><td><code>POST /api/intent</code> → 本地指令解析</td><td>否</td></tr>
+        <tr><td>4</td><td>其余全部</td><td><code>POST /api/turn</code> 领代号，再发 <code>[T]:原话</code></td><td>是</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <span class="lbl">README 与实现不一致</span>
+    <p>README 描述「设备清单附在操作类 <code>[T]</code> 后面」。当前代码里 <code>sayToRoom()</code> 只发 <code>[T]:原话</code>，并没有请求 <code>GET /api/roster</code> 拼清单。<code>buildRole()</code> 与 <code>/api/roster</code> 仍然可用，是留给房间侧人设或后续接线的；过滤侧（服务端 <code>visibleReply</code>、页面 <code>userEcho</code>）完整保留，用来处理房间回放整段 <code>[T]</code> 的情况。</p>
+  </div>
+
+  <h3>房间回答的处理</h3>
+  <p>房间的流式片段以 <code>[A]:[M]</code> 到达，页面累加到 <code>agentBuf</code> 并在同一条气泡上改字。最终帧是整句而不是增量，所以收到最终帧时不能再往已累积的片段后面接。最终帧交给 <code>POST /api/frame</code>，服务端从中摘出动作、过闸，再把过滤后的正文和卡片返回页面。</p>
+
+  <p>房间自己的 TTS 会念一遍回答。为了不让同一句话念两遍，页面把已经通过 <code>[E]:[CMD]:[TEXT]:</code> 播报过的文本记进 <code>spokenLocal</code> 集合，房间把它作为 <code>[A]</code> 回放时直接丢弃。</p>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="intent">
+  <h2><span class="h2num">07</span>指令的三条入口</h2>
+  <p>设备动作可以从三条完全不同的路径进来，最后都收敛到 <code>turn.finish()</code>。这是这套架构里最容易看错的部分：本地已经处理过的指令，房间可能还会再问一次。</p>
+
+  <div class="branches">
+    <div class="branch">
+      <span class="src">入口 A · 本地意图</span>
+      <p class="desc"><code>POST /api/intent</code>。页面正则命中设备动词后直接调用，不经过房间。服务端按原话补全 <code>cmd</code>、<code>param</code>、<code>value</code>，再按房间与品类收窄设备。</p>
+    </div>
+    <div class="branch">
+      <span class="src">入口 B · 函数调用</span>
+      <p class="desc"><code>[F]</code> 帧。控制台配好 <code>control_device</code>、<code>create_scene</code>、<code>open_repair</code> 三个意图后由模型发起。</p>
+    </div>
+    <div class="branch">
+      <span class="src">入口 C · 回答内代码块</span>
+      <p class="desc">最终 <code>[A]</code> 里带 ```iot 块或裸 JSON。意图没配好时的兜底路径，<code>extractAction()</code> 摘出来并从正文删掉。</p>
+    </div>
+  </div>
+
+  <p class="converge">↓ 三条入口统一收成 action 对象 ↓</p>
+
+  <div class="gatebox"><b>turn.finish()</b> 补全 → 消歧 → <code>policy.evaluate()</code></div>
+
+  <p class="converge">↓</p>
+
+  <div class="outcomes">
+    <div class="outcome allow">
+      <span class="t allow">allow</span>
+      <p>立即打 IoT，追加审计，出执行卡。</p>
+    </div>
+    <div class="outcome confirm">
+      <span class="t confirm">confirm</span>
+      <p>不执行。挂 5 分钟待确认单，页面出确认卡。</p>
+    </div>
+    <div class="outcome deny">
+      <span class="t deny">deny</span>
+      <p>直接拒绝，给出原因，不出执行卡。</p>
+    </div>
+  </div>
+
+  <h3>重复指令的抑制</h3>
+  <p>本地意图（入口 A）处理完后，房间在几秒内通常还会发起一次 <code>control_device</code>。页面记下 <code>localIntentAt</code>，60 秒内收到同名函数调用时不走闸门，直接回一个不播报的函数结果，内容明确告诉模型「已由页面列出设备，请用户点选，不要再追问」。没有这一步，模型会因为「没拿到函数结果」反复追问设备。</p>
+
+  <h3>多设备消歧</h3>
+  <p>模型给的 <code>deviceName</code> 只信设备清单里存在的值。<code>trustedName()</code> 校验不过就丢掉，改由用户原话重新匹配：先看房间（主卫 / 客卫），再看品类（马桶 / 浴缸 / 镜柜），最后看指令能力。命中一台直接下发，命中多台出选择卡，一台都没有则明确说不下发。</p>
+
+<pre class="code"><code><span class="c">// src/resolve.mjs · narrowDevices() 的收窄顺序</span>
+1. 房间      /主卫/ /客卫/
+2. 品类      /坐便器|马桶|大冲|小冲/ → 01
+             /浴缸|进水|放水/        → 04
+             /镜柜|夜灯/             → 06
+3. 指令能力  device.capability 是否包含该 cmd
+4. 在线状态  不参与过滤 ← 缺口所在</code></pre>
+
+  <div class="note warn">
+    <span class="lbl">已知缺口</span>
+    <p>在线状态不参与消歧。离线设备照样会被下发，平台返回 <code>code 500 / 设备离线</code> 后才在审计里记 FAILED。需求 3.4 要求「确认设备在线且具有相应权限」，当前是事后记录而非事前拦截。</p>
+  </div>
+</section>
+
+<!-- ============ 08 ============ -->
+<section id="gate">
+  <h2><span class="h2num">08</span>安全闸门</h2>
+  <p>闸门是整套系统里唯一决定「能不能下发」的地方。模型只表达想做什么，闸门负责说不。所有检查在 <code>src/policy.mjs</code> 内，不依赖网络。</p>
+
+  <h3>判定顺序</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>#</th><th>检查</th><th>失败结果</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>动作类型在 <code>device.control</code> / <code>scene.create</code> / <code>repair.open</code> 之内</td><td>deny · X</td></tr>
+        <tr><td>2</td><td><code>homeId</code> 与配置一致</td><td>deny · X</td></tr>
+        <tr><td>3</td><td><code>repair.open</code> 短路放行，不做设备校验</td><td>allow · L</td></tr>
+        <tr><td>4</td><td>动作列表非空，且不超过 <code>maxTargetsPerCall</code>（3）</td><td>deny · X</td></tr>
+        <tr><td>5</td><td>逐项校验：四字段非空 / 设备在本家庭 / 指令在指令表 / 指令适用该品类 / 参数名存在 / 参数值在枚举内</td><td>deny · X</td></tr>
+        <tr><td>6</td><td>风险分级，取所有项的最高等级</td><td>见下表</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>风险分级</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>命中规则</th><th>等级</th><th>行为</th></tr></thead>
+      <tbody>
+        <tr><td><code>cmd = switch_water_in</code></td><td><span class="badge b-warn">H</span></td><td>出确认卡，等用户点「确认执行」</td></tr>
+        <tr><td><code>param = switch</code></td><td><span class="badge b-neutral">M</span></td><td>唯一设备时直接下发</td></tr>
+        <tr><td>未命中任何规则</td><td><span class="badge b-neutral">M</span></td><td>同上，取 <code>defaultRiskLevel</code></td></tr>
+        <tr><td>—</td><td><span class="badge b-bad">C</span></td><td>当前没有规则产出 C 级，<code>denyAtOrAbove</code> 是预留档</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p><code>confirmAtOrAbove</code> 设为 H，<code>denyAtOrAbove</code> 设为 C。也就是高危要确认，严重级直接拒绝。目前没有规则会产出 C 级，拒绝实际只发生在校验失败时，等级记为 <code>X</code>。</p>
+
+  <h3>待确认动作的生命周期</h3>
+  <pre class="code"><code>PENDING ──claim()──▶ EXECUTING ──settle()──▶ SUCCEEDED / FAILED
+   │
+   ├──reject()──▶ REJECTED          <span class="c">// 用户点取消</span>
+   └──超 5 分钟──▶ EXPIRED           <span class="c">// claim 时惰性判定</span></code></pre>
+  <p><code>claim()</code> 把状态从 PENDING 改成 EXECUTING 并返回记录。重复调用会拿到「动作已是 EXECUTING」，所以双击确认按钮也只会下发一次。超时判定写在 <code>claim()</code> 里，是惰性的，没有后台定时器。</p>
+
+  <h3>审计留痕</h3>
+  <p>每条下发都写一行 <code>audit.jsonl</code>，字段覆盖需求 3.4 要求的三项：操作人、时间、设备与动作，另外把闸门判定和 IoT 往返也记下来，便于追溯。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>字段</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td><code>at</code> <code>actor</code> <code>sessionId</code></td><td>时间、操作人、会话号</td></tr>
+        <tr><td><code>kind</code> <code>homeId</code> <code>targets</code></td><td>动作类型、家庭号、逐台设备与指令</td></tr>
+        <tr><td><code>level</code> <code>reasons</code> <code>decision</code></td><td>风险等级、判定理由、EXECUTED 或其他</td></tr>
+        <tr><td><code>iotRequest</code> <code>iotResponse</code></td><td>完整往返，鉴权头经 <code>redact()</code> 脱敏</td></tr>
+        <tr><td><code>result</code> <code>httpStatus</code> <code>ms</code> <code>error</code></td><td>SUCCEEDED / FAILED、HTTP 码、耗时、错误</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>平台返回 HTTP 200 只代表接口可达。业务是否成功看 body 里的 <code>code</code> 与 <code>success</code>：<code>code</code> 为 200 或 10000 且 <code>success !== false</code> 才算成功。</p>
+</section>
+
+<!-- ============ 09 ============ -->
+<section id="orchestration">
+  <h2><span class="h2num">09</span>回合编排与打断</h2>
+  <p>用户可以在助手还在回答时说下一句。如果不做处理，上一句迟到的字幕会盖到新对话上。系统用「回合代号」解决这个问题，服务端和页面各持一份。</p>
+
+  <h3>两份发号器</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>位置</th><th>载体</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td>服务端</td><td><code>session.turnGen</code></td><td><code>POST /api/turn</code> 自增并返回。带旧代号返回的 <code>/api/frame</code>、<code>/api/intent</code> 请求，结果标记为 <code>superseded</code></td></tr>
+        <tr><td>页面</td><td><code>createTurnGate()</code></td><td>维护 <code>turnGen</code>、<code>claimTicket</code>、<code>turnBusy</code>、<code>turnKind</code> 与待发队列，决定哪个结果还能上屏</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>页面状态机的四条规则</h3>
+  <ul>
+    <li><strong>领代号即打断</strong>：<code>openTurn()</code> 先发 <code>[B]</code> 停掉上一句的 TTS，再向编排层领新代号。</li>
+    <li><strong>领号竞态只留最后一句</strong>：<code>claimTicket</code> 自增，回来时票号对不上就作废，只保留最后一次领取。</li>
+    <li><strong>过期结果不上屏</strong>：<code>stale(gen)</code> 在 <code>turnOpening</code> 为真或代号不等时返回真，页面直接丢弃返回值。</li>
+    <li><strong>房间超时自释放</strong>：房间发出后 20 秒没有最终回复，这一轮自行结束，队列里的下一句接着发。</li>
+  </ul>
+
+  <h3>打断时的保留与丢弃</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>对象</th><th>处理</th></tr></thead>
+      <tbody>
+        <tr><td>上一句的流式字幕</td><td>丢弃，按代号判断</td></tr>
+        <tr><td>上一句的 TTS 播报</td><td>发 <code>[B]</code> 停止，并暂停页面内所有音视频元素</td></tr>
+        <tr><td>已经画出的设备选择卡</td><td>保留在页面上，用户仍可点选</td></tr>
+        <tr><td>服务端已放行的指令</td><td>继续执行并写审计，只是结果不再交给页面</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>最后一条是刻意的选择：一旦指令过了闸门，就当成已发生的事实，不因为用户说了下一句而回滚。代价是可能出现「用户没看到结果但设备已经动了」，换成语音播报反馈能缓解。</p>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="storage">
+  <h2><span class="h2num">10</span>数据与存储</h2>
+  <p>没有数据库。三份本地文件，全部同步 IO，由 <code>src/store.mjs</code> 统一封装。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>文件</th><th>格式</th><th>内容</th><th>增长</th></tr></thead>
+      <tbody>
+        <tr><td><code>state.json</code></td><td>JSON</td><td>最近 40 条会话摘要与授权状态</td><td>有上限</td></tr>
+        <tr><td><code>audit.jsonl</code></td><td>每行一个 JSON</td><td>设备控制与场景操作审计</td><td>无上限，需轮转</td></tr>
+        <tr><td><code>cards.jsonl</code></td><td>每行一个 JSON</td><td>闸门卡、执行卡、选择卡的流水与确认结果</td><td>无上限</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>内存态与磁盘态的分界</h3>
+  <p>会话的完整记录只在内存 <code>Map</code> 里，进程重启即丢。写进 <code>state.json</code> 的只有 <code>id</code>、<code>title</code>、<code>lic</code>、<code>instanceId</code>、<code>createdAt</code>、<code>closedAt</code> 六个字段。所以重启之后会话列表还在，但拿它发帧会被拒。</p>
+
+  <h3>为什么卡片要单独存</h3>
+  <p>闸门卡、执行结果卡、设备选择卡都不是 BRTC 字幕的一部分，房间回放时拿不回来。要还原一次对话的界面状态，只能靠 <code>cards.jsonl</code>。同理，制动两张卡的 <code>pendingId</code> 只存在于内存，重启后旧的确认卡点了会报「待确认动作不存在」。</p>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="http">
+  <h2><span class="h2num">11</span>HTTP 接口</h2>
+  <p>17 条路由，原生 <code>node:http</code>，手写路由表。未命中路由的 GET 请求交给静态文件服务。</p>
+
+  <h3>会话与授权</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>方法 · 路径</th><th>用途</th><th>关键入参</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/config</code></td><td>页面初始化，判断四件套是否齐全</td><td>—</td></tr>
+        <tr><td><code>POST /api/session</code></td><td>建实例，返回 session、licFrame、join</td><td><code>title</code></td></tr>
+        <tr><td><code>GET /api/session</code></td><td>列会话或查单条</td><td><code>id?</code></td></tr>
+        <tr><td><code>POST /api/session/lic</code></td><td>收到 MUST，换 ACTIVE 帧</td><td><code>sessionId</code> <code>frame</code></td></tr>
+        <tr><td><code>POST /api/session/lic-result</code></td><td>记录 PASS / FAILED</td><td><code>sessionId</code> <code>frame</code></td></tr>
+        <tr><td><code>POST /api/session/stop</code></td><td>停实例并关会话</td><td><code>sessionId</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>对话与指令</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>方法 · 路径</th><th>用途</th><th>关键入参</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /api/turn</code></td><td>领回合代号</td><td><code>sessionId</code></td></tr>
+        <tr><td><code>POST /api/frame</code></td><td>交字幕帧或函数帧，返回解析结果与卡片</td><td><code>sessionId</code> <code>frame</code> <code>finalText</code> <code>userText</code> <code>turnGen</code></td></tr>
+        <tr><td><code>POST /api/intent</code></td><td>本地意图解析与下发</td><td><code>sessionId</code> <code>text</code> <code>turnGen</code></td></tr>
+        <tr><td><code>POST /api/choose</code></td><td>选择卡点选后重新下发</td><td><code>action</code> <code>deviceName</code> <code>choiceId</code></td></tr>
+        <tr><td><code>POST /api/confirm</code></td><td>确认或取消高危动作</td><td><code>pendingId</code> <code>decision</code></td></tr>
+        <tr><td><code>POST /api/topic</code></td><td>数据统计话题转发适配层</td><td><code>text</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>查询与只读</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>方法 · 路径</th><th>用途</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/devices</code></td><td>设备列表，按房间分组</td><td><code>fresh=1</code> 跳过 20 秒缓存</td></tr>
+        <tr><td><code>GET /api/audit</code></td><td>最近 80 条审计</td><td>倒序</td></tr>
+        <tr><td><code>GET /api/cards</code></td><td>某会话的卡片流水</td><td><code>sessionId</code></td></tr>
+        <tr><td><code>GET /api/roster</code></td><td>生成设备事实清单文本</td><td>当前页面未调用</td></tr>
+        <tr><td><code>GET /api/topic/image/:id</code></td><td>代理适配层生成的图片</td><td>缓存 5 分钟</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn">
+    <span class="lbl">生产阻塞项</span>
+    <p>这些路由<strong>没有任何鉴权</strong>。任何能访问端口的人都可以调 <code>/api/intent</code> 下发设备指令，或读 <code>/api/audit</code> 拿到全部操作记录。<code>sessionId</code> 虽然是随机串，但它不是鉴权凭证。上线前必须补会话绑定与调用方身份校验。</p>
+  </div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="external">
+  <h2><span class="h2num">12</span>外部集成与配置</h2>
+
+  <h3>箭牌 IoT</h3>
+  <p>UAT 地址 <code>https://api-uatiot.arrowgroup.com.cn</code>，三个接口，公共头带 <code>Authorization: bearer &lt;token&gt;</code>、<code>appPlatform: arrow</code>、<code>ArrowDeviceSystemPlatform: 0</code>。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>接口</th><th>方法 · 路径</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td>设备列表</td><td><code>GET /ext/v3/ai/device-list</code></td><td>房间、名称、在线状态、设备号</td></tr>
+        <tr><td>设备控制</td><td><code>POST /ext/v3/ai/control</code></td><td><code>homeId</code> + <code>cmdList</code></td></tr>
+        <tr><td>创建场景</td><td><code>POST /ext/v3/ai/scene</code></td><td><code>conditionList</code> + <code>actionList</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>401 和 403 都按「token 无效或过期」处理，审计里记 <code>鉴权失败</code>。</p>
+
+  <h3>统计适配层</h3>
+  <p>命中数据统计话题后，服务端把原话转发到 <code>TOPIC_ADAPTER_URL</code>（OpenAI 兼容的 <code>chat/completions</code>），由适配层再调 DuMate。适配层把可展示的检修报告包在 ```html 代码块里返回，<code>topicView()</code> 拆出口头结论和 HTML，页面分别渲染成气泡和内嵌 iframe（<code>sandbox</code> 为空，脚本被禁用）。</p>
+
+  <h3>环境变量</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>变量</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>PORT</code></td><td>否</td><td>默认 8900</td></tr>
+        <tr><td><code>BRTC_APPID</code> <code>BRTC_AK</code> <code>BRTC_SK</code> <code>BRTC_LICKEY</code></td><td>是</td><td>四件套，缺一项页面就禁用输入</td></tr>
+        <tr><td><code>BRTC_DEVID</code></td><td>否</td><td>固定值，换号会重复消耗激活额度</td></tr>
+        <tr><td><code>BRTC_API_HOST</code> <code>BRTC_INSTANCE_TYPE</code></td><td>否</td><td>默认 <code>rtc-aiagent.baidubce.com</code> / <code>VoiceChat</code></td></tr>
+        <tr><td><code>IOT_MODE</code></td><td>否</td><td><code>real</code> 打 UAT，<code>mock</code> 起本地网关 <code>:18901</code></td></tr>
+        <tr><td><code>IOT_BASE_URL</code> <code>IOT_TOKEN</code></td><td>real 时必填</td><td>IoT 地址与令牌</td></tr>
+        <tr><td><code>IOT_FIXTURE</code></td><td>否</td><td><code>real</code> 读 <code>devices.real.json</code>，否则读 <code>devices.json</code></td></tr>
+        <tr><td><code>TOPIC_ADAPTER_URL</code> <code>TOPIC_API_KEY</code></td><td>否</td><td>缺省则数据统计话题直接报「适配层未配置」</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section id="frontend">
+  <h2><span class="h2num">13</span>前端架构</h2>
+  <p>三个视图共用一个页面，没有构建工具、没有框架、没有依赖包。<code>app.js</code> 是一个 ES module，直接由浏览器加载。</p>
+
+  <h3>视图与导航</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>视图</th><th>内容</th><th>数据来源</th></tr></thead>
+      <tbody>
+        <tr><td>通话</td><td>对话流、快捷句、输入框、按住说话</td><td>BRTC 字幕 + <code>/api/*</code></td></tr>
+        <tr><td>家庭设备</td><td>按房间分组的设备与在线状态</td><td><code>GET /api/devices?fresh=1</code></td></tr>
+        <tr><td>安全审计</td><td>最近 80 条操作流水</td><td><code>GET /api/audit</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>对话区气泡的状态变量</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>变量</th><th>语义</th></tr></thead>
+      <tbody>
+        <tr><td><code>userBubble</code></td><td>当前正在写入的用户气泡，带 <code>data-live</code> / <code>data-pending</code> / <code>data-local</code> 标记</td></tr>
+        <tr><td><code>agentBubble</code></td><td>当前助手气泡，流式片段在它上面累加</td></tr>
+        <tr><td><code>agentBuf</code></td><td>已累积的流式片段，最终帧到达时清空</td></tr>
+        <tr><td><code>sentText</code></td><td>本地已画出的用户原话，用来对上房间回放的 <code>[Q]</code></td></tr>
+        <tr><td><code>lastAsk</code></td><td>本轮提问，用于过滤模型复读与清单照抄</td></tr>
+        <tr><td><code>spokenLocal</code></td><td>已本地播报过的文本，房间回放同一句时丢弃</td></tr>
+        <tr><td><code>localIntentAt</code></td><td>上次本地意图时间，60 秒内抑制重复的 <code>[F]</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>移动端适配</h3>
+  <ul>
+    <li>760px 以下换成上栏布局，标志在左，通话 / 设备 / 审计在右。</li>
+    <li>输入字号固定 16px，避免 iOS 聚焦时放大页面。</li>
+    <li>按住说话用 <code>setPointerCapture</code>，手指移出按钮再松开也会正常结束录音。</li>
+    <li>键盘弹出时用 <code>visualViewport</code> 算出遮挡高度，把输入栏平移到键盘上方。</li>
+    <li>非安全上下文（http）直接提示「浏览器不允许使用麦克风」。麦克风必须走 https。</li>
+  </ul>
+
+  <h3>质检页面</h3>
+  <p><code>public/accept.html</code> 在浏览器里跑一遍过滤逻辑的一致性校验，把页面的 <code>visibleReply</code> / <code>userEcho</code> 与服务端 <code>src/roster.mjs</code> 的同名函数逐条比对。两边实现是分开写的，这个页面用来防止它们漂开。</p>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="deploy">
+  <h2><span class="h2num">14</span>部署与运行</h2>
+
+  <h3>本地启动</h3>
+<pre class="code"><code>cd 箭牌h5平台
+cp .env.example .env     <span class="c"># 填 BRTC_APPID / AK / SK / LICKEY</span>
+npm start                <span class="c"># http://127.0.0.1:8900</span></code></pre>
+  <p>四件套齐全时页面自动建连；缺项时页面可打开，输入框保持禁用，并在侧栏列出缺哪些变量。</p>
+
+  <h3>自检与测试</h3>
+  <p><code>npm run check</code> 依次跑四个自检脚本，不连 BRTC、不连真实 IoT。</p>
+  <div class="tw">
+    <table>
+      <thead><tr><th>脚本</th><th>覆盖</th></tr></thead>
+      <tbody>
+        <tr><td><code>src/selfcheck.mjs</code></td><td>闸门四级判定、帧解析、iot 块摘取、消歧、授权帧、审计结果</td></tr>
+        <tr><td><code>src/turn-gate.check.mjs</code></td><td>回合打断、领号竞态、过期结果丢弃</td></tr>
+        <tr><td><code>src/send-text.check.mjs</code></td><td>上一轮忙碌时新句子的排队与接管</td></tr>
+        <tr><td><code>src/accept.check.mjs</code></td><td>十类问题验收（<code>npm run check</code> 未包含，单独跑）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>演示用 fixture</h3>
+  <p>设备清单不放在本目录，直接读 <code>../箭牌demo打通/iot/devices.json</code>，避免两个 demo 的名单漂开。演示数据是 11 台设备：6 台坐便器、2 台浴缸、3 台镜柜，分布在主卫和客卫。</p>
+</section>
+
+<!-- ============ 15 ============ -->
+<section id="limits">
+  <h2><span class="h2num">15</span>已知限制</h2>
+  <p>按对上线的影响排序。<span class="badge b-bad">阻塞</span> 表示不修不能上生产，<span class="badge b-warn">待补</span> 表示影响完整度，<span class="badge b-neutral">已知</span> 表示可以暂缓。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>项</th><th>影响</th><th>级别</th></tr></thead>
+      <tbody>
+        <tr><td>HTTP 接口无鉴权</td><td>任何人可下发设备指令、读全部审计</td><td><span class="badge b-bad">阻塞</span></td></tr>
+        <tr><td>无 TLS 与反向代理</td><td>麦克风在 http 下不可用，必须 https 域名</td><td><span class="badge b-bad">阻塞</span></td></tr>
+        <tr><td>会话状态只在内存</td><td>重启即丢，无法横向扩容</td><td><span class="badge b-bad">阻塞</span></td></tr>
+        <tr><td>审计同步写文件</td><td><code>appendFileSync</code> 阻塞事件循环，并发上不去</td><td><span class="badge b-bad">阻塞</span></td></tr>
+        <tr><td>离线设备不拦截</td><td>指令照发，事后记 FAILED，不满足需求 3.4</td><td><span class="badge b-warn">待补</span></td></tr>
+        <tr><td>场景创建未联调</td><td>链路在，没有一次端到端验证</td><td><span class="badge b-warn">待补</span></td></tr>
+        <tr><td>场景删除不支持</td><td>不可逆操作的二次确认无从验证</td><td><span class="badge b-warn">待补</span></td></tr>
+        <tr><td>用户身份缺失</td><td>审计操作人恒为 <code>app-user</code>，无跨用户隔离</td><td><span class="badge b-warn">待补</span></td></tr>
+        <tr><td>设备清单注入未接线</td><td>模型只能靠人设猜设备名，消歧靠原话补救</td><td><span class="badge b-warn">待补</span></td></tr>
+        <tr><td><code>chosenOnce</code> 只增不减</td><td>长期运行内存缓慢增长</td><td><span class="badge b-neutral">已知</span></td></tr>
+        <tr><td>无 HTTP 层集成测试</td><td>路由、序列化、错误分支没有自动化覆盖</td><td><span class="badge b-neutral">已知</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>并发能力</h3>
+  <p>需求要求每分钟不低于 20 路会话。当前架构下，闸门与解析是纯内存计算，瓶颈在审计落盘（同步写）和会话状态（单进程）。单实例跑 20 路应该能撑住，但没有测过，也没有连接数保护。</p>
+</section>
+
+<!-- ============ 16 ============ -->
+<section id="glossary">
+  <h2><span class="h2num">16</span>术语表</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th>术语</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td>BRTC</td><td>百度智能云实时音视频，本系统用它的互动智能体能力</td></tr>
+        <tr><td>互动实例</td><td>一次通话对应一个云端实例，由 <code>generateAIAgentCall</code> 创建</td></tr>
+        <tr><td>LIC</td><td>License 授权。网关推 MUST，服务端回 ACTIVE，网关回 PASS 或 FAILED</td></tr>
+        <tr><td>lickey</td><td>License Key，与 AppID 绑定，只在服务端存在</td></tr>
+        <tr><td>数据通道帧</td><td>SDK 通过 <code>onmessage</code> 交付的文本消息，前缀区分类型</td></tr>
+        <tr><td>[Q] / [A]</td><td>用户说话的 ASR 结果 / 智能体回答</td></tr>
+        <tr><td>[M] / [C]</td><td>流式中间态 / 纠错帧</td></tr>
+        <tr><td>[F]</td><td>函数调用帧</td></tr>
+        <tr><td>[T] / [B]</td><td>页面发给房间的文字 / 打断播报指令</td></tr>
+        <tr><td>回合代号</td><td><code>turnGen</code>，每句输入一个，用来作废过期结果</td></tr>
+        <tr><td>闸门</td><td>安全策略层，决定动作能否下发</td></tr>
+        <tr><td>消歧</td><td>把「打开夜灯」落到具体某一台设备</td></tr>
+        <tr><td>fixture</td><td>本地设备清单快照，演示与测试用</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer class="foot">
+  <span>arrow-brtc-h5 v0.1.0</span>
+  <span>来源：仓库源码与 2026-10-11 至 10-13 测试报告</span>
+  <span>2026-10-26</span>
+</footer>
+
+</div>

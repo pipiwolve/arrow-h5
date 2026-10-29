@@ -18,7 +18,7 @@ import { createGate } from './src/policy.mjs';
 import { createSessions } from './src/session.mjs';
 import { createTurn } from './src/turn.mjs';
 import { actionFromCall, classifyFrame, extractAction, functionResultFrame, visibleAgent } from './src/frames.mjs';
-import { topicModel } from './src/topic.mjs';
+import { topicImage, topicModel, topicView } from './src/topic.mjs';
 import { buildRole, visibleReply } from './src/roster.mjs';
 import { createGateway } from '../箭牌demo打通/iot/mock-gateway.mjs';
 
@@ -248,9 +248,10 @@ const routes = {
     }
     const spoken = String(finished.spoken || '').trim();
     const shown = visibleAgent(visibleReply(clean, userText));
+    const image = topicImage(shown) ? await latestTopicImage(asked) : null;
     return redact({
       parsed: { kind: 'agent', text: shown || spoken, partial: false },
-      action, cards: finished.cards,
+      action, cards: finished.cards, image,
     });
   },
 
@@ -262,6 +263,7 @@ const routes = {
       return { status: 400, body: { error: '数据统计适配层未配置' } };
     }
     const res = await fetch(ENV.TOPIC_ADAPTER_URL, {
+      signal: AbortSignal.timeout(160_000),
       method: 'POST',
       headers: {
         Authorization: `Bearer ${ENV.TOPIC_API_KEY}`,
@@ -277,7 +279,8 @@ const routes = {
       return { status: res.status, body: { error: body.error?.message || `适配层 HTTP ${res.status}` } };
     }
     const answer = body.choices?.[0]?.message?.content || '';
-    return { model, text: answer };
+    const view = topicView(answer);
+    return { model, text: view.say, html: view.html };
   },
 
   async 'POST /api/turn'(req) {
@@ -355,6 +358,32 @@ const routes = {
   },
 };
 
+async function proxyTopicImage(res, id) {
+  if (!ENV.TOPIC_ADAPTER_URL) return sendJson(res, 404, { error: '图片不存在' });
+  const root = ENV.TOPIC_ADAPTER_URL.replace(/\/v1\/chat\/completions\/?$/, '');
+  const upstream = await fetch(`${root}/v1/images/${encodeURIComponent(id)}`).catch(() => null);
+  if (!upstream?.ok) return sendJson(res, 404, { error: '图片不存在' });
+  const bytes = Buffer.from(await upstream.arrayBuffer());
+  res.writeHead(200, {
+    'Content-Type': upstream.headers.get('content-type') || 'image/png',
+    'Cache-Control': 'private, max-age=300',
+  });
+  res.end(bytes);
+}
+
+async function latestTopicImage(ask) {
+  if (!ENV.TOPIC_API_KEY || !ENV.TOPIC_ADAPTER_URL || !ask) return null;
+  const root = ENV.TOPIC_ADAPTER_URL.replace(/\/v1\/chat\/completions\/?$/, '');
+  const found = await fetch(`${root}/v1/images/latest?ask=${encodeURIComponent(ask)}`, {
+    headers: { Authorization: `Bearer ${ENV.TOPIC_API_KEY}` },
+    signal: AbortSignal.timeout(8000),
+  }).catch(() => null);
+  if (!found?.ok) return null;
+  const body = await found.json().catch(() => ({}));
+  if (!body.id) return null;
+  return { url: `/api/topic/image/${encodeURIComponent(body.id)}`, name: body.name || '' };
+}
+
 function matchRoute(method, pathname) {
   return routes[`${method} ${pathname}`] || null;
 }
@@ -380,6 +409,8 @@ const chosenOnce = new Set();
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+  const imageId = url.pathname.match(/^\/api\/topic\/image\/([^/]+)$/)?.[1];
+  if (req.method === 'GET' && imageId) return proxyTopicImage(res, decodeURIComponent(imageId));
   const handler = matchRoute(req.method, url.pathname);
   if (!handler) return serveStatic(req, res, url.pathname);
   try {

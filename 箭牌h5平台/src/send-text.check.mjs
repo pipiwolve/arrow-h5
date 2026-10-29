@@ -24,6 +24,7 @@ function makeEl(id) {
     children: [],
     classList: { add() {}, remove() {}, toggle() {} },
     append(...nodes) { this.children.push(...nodes); },
+    querySelectorAll() { return []; },
     querySelector() { return null; },
     querySelectorAll(selector) {
       if (selector === '.bubble.user') {
@@ -64,6 +65,9 @@ const api = async (path, opts) => {
     if (claimDelay) await new Promise((resolve) => setTimeout(resolve, claimDelay));
     turnGen += 1;
     return { turnGen };
+  }
+  if (path === '/api/frame') {
+    return { parsed: { kind: 'agent', text: body.finalText || '', partial: false }, cards: [] };
   }
   if (path === '/api/intent') {
     return {
@@ -115,7 +119,9 @@ context.__session();
 
 function nodeText(node) {
   const textNode = node.children?.find((child) => child.className === 'text');
-  return textNode ? textNode.textContent : node.textContent;
+  const own = textNode ? textNode.textContent : node.textContent;
+  const nested = (node.children || []).map(nodeText).filter(Boolean).join(' ');
+  return [own, nested].filter(Boolean).join(' ');
 }
 
 function users() {
@@ -142,7 +148,30 @@ assert.equal(el('stream').children.some((node) => String(node.className).include
 await context.__sendText('AKB1357有哪些功能');
 assert.deepEqual(users(), ['大冲', 'AKB1357有哪些功能']);
 assert.ok(sent.includes('[T]:AKB1357有哪些功能'), sent.join(' | '));
-assert.equal(el('stream').children.some((node) => String(node.className).includes('choose')), true);
+
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('AKB1357对水压和进水温度有什么要求？');
+assert.ok(sent.includes('[T]:AKB1357对水压和进水温度有什么要求？'), sent.join(' | '));
+assert.equal(agentLines().some((line) => line.includes('选一台')), false);
+
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('三款的额定功率分别是多少？');
+assert.ok(sent.includes('[T]:三款的额定功率分别是多少？'), sent.join(' | '));
+assert.equal(agentLines().some((line) => line.includes('选一台')), false);
+
+for (const ask of [
+  'FLM0814S-Q落座超过1分钟，灵动智慧冲会大冲还是小冲？',
+  'NiL125做完妇洗后离座，自动冲水是大冲还是小冲？',
+  'NiL125自动冲水关掉之后，到底冲不冲水？',
+]) {
+  el('stream').children.length = 0;
+  sent.length = 0;
+  await context.__sendText(ask);
+  assert.ok(sent.includes(`[T]:${ask}`), sent.join(' | '));
+  assert.equal(agentLines().some((line) => line.includes('选一台')), false, ask);
+}
 
 // 房间还在领代号时，第二句不能丢，要在第一句领完后单独发出。
 el('stream').children.length = 0;
@@ -190,7 +219,99 @@ await context.__sendText('我家坐便器不出水了，要报修');
 await flushing;
 const after = el('stream').children.map((node) => `${node.className}:${nodeText(node)}`).join(' || ');
 assert.ok(after.includes('已准备好报修入口'), after);
+assert.ok(after.includes('打开报修页'), after);
+assert.equal(after.includes('查看报修进度'), false);
 assert.ok(sent.some((frame) => frame.includes('[E]:[CMD]:[TEXT]:已准备好报修入口')), sent.join(' | '));
+
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('查一下报修进度');
+const progress = el('stream').children.map((node) => `${node.className}:${nodeText(node)}`).join(' || ');
+assert.ok(progress.includes('已准备好进度入口'), progress);
+assert.ok(progress.includes('查看报修进度'), progress);
+assert.equal(progress.includes('打开报修页'), false);
+
+// 本地卡片结束后再问产品，必须把原话送进房间。卡片不能先发打断帧。
+for (const [cardAsk, follow] of [
+  ['我家坐便器不出水了，要报修', 'AKB1357有哪些功能'],
+  ['查一下报修进度', 'AKB1357保修几年'],
+  ['大冲', 'AKB1357有哪些功能'],
+]) {
+  el('stream').children.length = 0;
+  sent.length = 0;
+  claimDelay = 0;
+  await context.__sendText(cardAsk);
+  await context.__sendText(follow);
+  const spokenAt = sent.findIndex((frame) => frame.startsWith('[E]:[CMD]:[TEXT]:'));
+  const askedAt = sent.indexOf(`[T]:${follow}`);
+  assert.ok(askedAt > spokenAt, `${cardAsk} -> ${sent.join(' | ')}`);
+  assert.equal(sent.slice(spokenAt + 1, askedAt).includes('[B]'), false, sent.join(' | '));
+  assert.ok(users().includes(follow));
+  await context.__onAgentFrame({ data: `[Q]:[M]:${follow.slice(0, 2)}` });
+  await context.__onAgentFrame({ data: `[Q]:用户：${follow}` });
+  await context.__onAgentFrame({ data: '[A]:说明书里的回答' });
+  assert.equal(sent.filter((frame) => frame === `[T]:${follow}`).length, 1, sent.join(' | '));
+  assert.equal(users().filter((line) => line === follow).length, 1, users().join(' | '));
+  assert.ok(agentLines().includes('说明书里的回答'), agentLines().join(' | '));
+}
+
+// 进度卡的播报尾巴晚于下一句到达。空的 [A] 不能再发 [B]，否则房间里的下一句被打断。
+el('stream').children.length = 0;
+sent.length = 0;
+claimDelay = 0;
+await context.__sendText('查一下报修进度');
+await context.__sendText('AKB1357有哪些功能');
+const beforeTail = sent.length;
+await context.__onAgentFrame({ data: '[A]:' });
+assert.equal(sent.slice(beforeTail).includes('[B]'), false, sent.join(' | '));
+assert.equal(sent.filter((frame) => frame === '[T]:AKB1357有哪些功能').length, 1, sent.join(' | '));
+await context.__onAgentFrame({ data: '[A]:说明书里的功能' });
+assert.ok(agentLines().includes('说明书里的功能'), agentLines().join(' | '));
+
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('我要保修');
+const warranty = el('stream').children.map((node) => `${node.className}:${nodeText(node)}`).join(' || ');
+assert.ok(warranty.includes('已准备好报修入口'), warranty);
+assert.ok(warranty.includes('打开报修页'), warranty);
+assert.equal(sent.includes('[T]:我要保修'), false, sent.join(' | '));
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('我马桶坏了');
+const broken = el('stream').children.map((node) => `${node.className}:${nodeText(node)}`).join(' || ');
+assert.ok(broken.includes('打开报修页'), broken);
+assert.equal(sent.includes('[T]:我马桶坏了'), false, sent.join(' | '));
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('AKB1357保修几年');
+assert.ok(sent.includes('[T]:AKB1357保修几年'), sent.join(' | '));
+assert.equal(agentLines().some((line) => line.includes('报修入口')), false);
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('1357滤芯坏了算不算保修，一般多久得换一次');
+assert.ok(sent.includes('[T]:1357滤芯坏了算不算保修，一般多久得换一次'), sent.join(' | '));
+assert.equal(agentLines().some((line) => line.includes('报修入口')), false);
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('AKB1357喷枪不出水先查什么？');
+assert.ok(sent.includes('[T]:AKB1357喷枪不出水先查什么？'), sent.join(' | '));
+assert.equal(agentLines().some((line) => line.includes('报修入口')), false);
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('AKB1357整机保修几年？客服电话是多少？');
+assert.ok(sent.includes('[T]:AKB1357整机保修几年？客服电话是多少？'), sent.join(' | '));
+assert.equal(agentLines().some((line) => line.includes('报修入口')), false);
+el('stream').children.length = 0;
+sent.length = 0;
+await context.__sendText('NiL125自动冲水关掉之后，到底冲不冲水？');
+assert.ok(sent.includes('[T]:NiL125自动冲水关掉之后，到底冲不冲水？'), sent.join(' | '));
+assert.equal(agentLines().some((line) => line.includes('选择设备')), false);
+
+el('stream').children.length = 0;
+await context.__onAgentFrame({ data: '[A]:[M]:正在处理。' });
+await context.__onAgentFrame({ data: '[A]:您好，我是箭牌智家助手。请问有什么可以帮您？' });
+assert.equal(agentLines().includes('正在处理。'), false, agentLines().join(' | '));
+assert.ok(agentLines().some((line) => line.includes('请问有什么可以帮您')), agentLines().join(' | '));
 
 // 按住期间识别结果已经发出时，松手不能再把「识别中」盖回去。
 el('stream').children.length = 0;

@@ -1,0 +1,160 @@
+{
+  "file": "/tmp/kb-balance.jsonl",
+  "at": "2026-10-28T11:30:05.102Z",
+  "results": [
+    {
+      "id": "W01",
+      "style": "开放列举",
+      "brand": "箭牌",
+      "category": "开放",
+      "question": "AKB1357 有哪些功能",
+      "answer": "AKB1357的功能啊臀洗、妇洗、助便畅洗、深层净洗、全面护理、暖风烘干、座圈加热、智慧清洁、全域除菌。",
+      "ms": 5903,
+      "note": "只列清洗稿写明的功能",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W04",
+      "style": "同义",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "箭牌1357这马桶费电吗，加热是即热的那种吗",
+      "answer": "加热方式啊.900W，即热式。  \n取值条件：环境温度25°C，湿度65%，入水水压0.2MPa，入水温度15°C，臀洗和妇洗取最大值。水温、座温、水量按最高档流量。不计水加热刚开启的瞬间功率，取喷嘴喷水后的代表性区间功率。",
+      "ms": 5880,
+      "note": "不说额定功率",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W06",
+      "style": "同义",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "AKB1357女性清洗一次大概持续多久",
+      "answer": "女性清洗一次约90秒。  \n遥控时长固定约90秒，小程序或App可调。",
+      "ms": 3096,
+      "note": "女性清洗指妇洗",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W13",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "保修",
+      "question": "AKB1357整机保修几年？客服电话是多少？",
+      "answer": "六年。  \n客服热线400-8301831。",
+      "ms": 3393,
+      "note": "写作说明不要念给用户",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W16",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华马桶放好几天没人用，座圈加热会不会自己关掉",
+      "answer": "不会自动关闭。\n说明书未记载。",
+      "ms": 2796,
+      "note": "好几天对应商务模式72小时",
+      "pass": false,
+      "missing": [
+        "72"
+      ],
+      "banned": [
+        "未记载"
+      ],
+      "anyHit": []
+    },
+    {
+      "id": "W17",
+      "style": "同义",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华做完女士清洗起身，它冲大的还是小的",
+      "answer": "",
+      "ms": 35200,
+      "note": "女士清洗指妇洗",
+      "pass": false,
+      "missing": [
+        "小冲"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W18",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "1357坑距多少，长宽高给我一个数",
+      "answer": "",
+      "ms": 35263,
+      "note": "不许用常见值或其他型号填数",
+      "pass": false,
+      "missing": [
+        "须命中其一"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W23",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎这马桶座圈一共几档，算上关掉的吗",
+      "answer": "",
+      "ms": 35203,
+      "note": "六档含关闭0档",
+      "pass": false,
+      "missing": [
+        "六档"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W28",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华节能开着，放多久没人动会再进去",
+      "answer": "",
+      "ms": 35242,
+      "note": "节能是连续1小时，不是商务模式的72小时",
+      "pass": false,
+      "missing": [
+        "1小时"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W30",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎刚冲完再按一下，会怎么样",
+      "answer": "",
+      "ms": 35217,
+      "note": "补水约30秒，再冲不启动",
+      "pass": false,
+      "missing": [
+        "30"
+      ],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "file": "/tmp/kb-tail6.jsonl",
+  "at": "2026-10-29T03:02:14.198Z",
+  "results": [
+    {
+      "id": "AKB-20",
+      "style": "",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "AKB1357L和AKB1357M功能有什么差别？",
+      "answer": "功能差别啊说明书未区分。",
+      "ms": 3807,
+      "note": "说明书未区分。回答应说明未记载，不能编差异。expect_contains用「未」覆盖未区分、未记载、没有写明",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "NIL-14",
+      "style": "",
+      "brand": "安华",
+      "category": "边界",
+      "question": "NiL125自动冲水关掉之后，到底冲不冲水？",
+      "answer": "选择设备\n有多台设备符合，选一台再下发。\n客卫 akb162111\n客卫 AKB1332-111\n主卫 AKB1332-P智能坐便器\n客卫 AKB1621-A-4G智能坐便器\n主卫 AKB1357智能坐便器\n客卫 AKB1325-P智能坐便器\n11楼AKB1325-P",
+      "ms": 3554,
+      "note": "原文两句相反。回答应说明说明书表述冲突，而不是选一句",
+      "pass": false,
+      "missing": [
+        "冲突"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "X-01",
+      "style": "",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "AKB1357、FLM0814S-Q和NiL125的客服电话分别是多少？",
+      "answer": "箭牌400-8301831，法恩莎400-101-3862，安华400-1066-828。",
+      "ms": 3888,
+      "note": "三号必须对应到箭牌、法恩莎、安华，不能互换",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "X-02",
+      "style": "",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "这三款坐便器哪一款没有臀洗？",
+      "answer": "法恩莎FLM0814S-QM没有臀洗。",
+      "ms": 2942,
+      "note": "只有法恩莎轻智能没有臀洗",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "X-03",
+      "style": "",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "三款的额定功率分别是多少？",
+      "answer": "箭牌AKB1357：900W。  \n安华NiL125：790W。  \n法恩莎FLM0814S-Q：无即热清洗功率，冲水85W，座圈加热46W。",
+      "ms": 3767,
+      "note": "箭牌900W，安华790W，法恩莎冲水额定功率85W。法恩莎还有座圈加热46W",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "X-04",
+      "style": "",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "请告诉我AKB1357的安装孔距和外形毫米尺寸。",
+      "answer": "说明书未记载。",
+      "ms": 2216,
+      "note": "正文没有可引用毫米数。回答说明书未记载即可",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

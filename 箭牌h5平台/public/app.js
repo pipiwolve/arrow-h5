@@ -77,6 +77,37 @@ function addBubble(role, text) {
   return el;
 }
 
+function addPicture(url, name) {
+  const card = document.createElement('div');
+  card.className = 'card picture';
+  const label = document.createElement('div');
+  label.className = 'lv';
+  label.textContent = '效果图';
+  const img = document.createElement('img');
+  img.alt = name || '效果图';
+  img.src = url;
+  card.append(label, img);
+  $('stream').append(card);
+  card.scrollIntoView({ block: 'end' });
+  return card;
+}
+
+function addReport(html) {
+  const card = document.createElement('div');
+  card.className = 'card report';
+  const label = document.createElement('div');
+  label.className = 'lv';
+  label.textContent = '检修报告';
+  const frame = document.createElement('iframe');
+  frame.title = '检修报告';
+  frame.sandbox = '';
+  frame.srcdoc = html;
+  card.append(label, frame);
+  $('stream').append(card);
+  card.scrollIntoView({ block: 'end' });
+  return card;
+}
+
 function bubbleText(el) {
   return el?.querySelector?.('.text') || el;
 }
@@ -110,7 +141,11 @@ function userEcho(text, sent) {
   if (!sent) return { text: src, echo: false };
   const got = src.replace(/\s+/g, '');
   const want = String(sent).replace(/\s+/g, '');
-  return { text: src, echo: got === want || (want.startsWith(got) && got.length > 0) };
+  if (!got || !want) return { text: src, echo: false };
+  if (got === want || want.startsWith(got)) return { text: src, echo: true };
+  // 房间常在原话前加「用户：」。只允许多出这几个字，避免短句被更长的新问题套住。
+  const extra = got.length - want.length;
+  return { text: src, echo: extra > 0 && extra <= 3 && got.endsWith(want) };
 }
 
 function paintAgent(text) {
@@ -186,7 +221,7 @@ function addCard(card) {
       row.className = 'actions';
       const go = document.createElement('a');
       go.href = data.deeplink;
-      go.textContent = '打开报修页';
+      go.textContent = data.linkText || (data.kind === 'progress' ? '查看报修进度' : '打开报修页');
       row.append(go);
       el.append(row);
     }
@@ -270,9 +305,6 @@ async function onAgentFrame(msg) {
     }
     const hold = agentBubble;
     const gen = turns.snapshot().turnGen;
-    agentBubble = null;
-    paintAgent('正在处理。');
-    if (agentBubble) agentBubble.classList.add('thinking');
     const finished = await api('/api/frame', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -316,16 +348,19 @@ async function onAgentFrame(msg) {
     }
     // 文字和快捷句已经在本地画过。房间回放整段 [T]，含设备清单。
     // 清单从标记起丢掉。对上用户原话就改这一条，不再追加绿色长气泡。
-    if (sentText && userBubble?.dataset.local) {
+    // 回声比对不能只看当前气泡。本地卡片会把 userBubble 挪走，房间回放仍要认回刚才发出的那句。
+    if (sentText) {
       const echo = userEcho(text, sentText);
       if (echo.echo) {
-        if (sameText(echo.text, sentText)) bubbleText(userBubble).textContent = sentText;
+        if (userBubble && sameText(echo.text, sentText)) bubbleText(userBubble).textContent = sentText;
         if (!partial && sameText(echo.text, sentText)) {
           sentText = '';
           userBubble = null;
         }
         return;
       }
+      // 中间态还不是这一句时先留着。清掉代号会让最终回放被当成新问题，并把正在等的回答打断。
+      if (partial) return;
       sentText = '';
       userBubble = null;
     }
@@ -357,6 +392,7 @@ async function onAgentFrame(msg) {
   const gen = turns.snapshot().turnGen;
   if (partial) {
     if (stale(gen)) return;
+    if (text === '正在处理。' || text === '正在处理') return;
     agentBuf += text;
     paintAgent(agentBuf);
     return;
@@ -371,8 +407,15 @@ async function onAgentFrame(msg) {
   if (stale(gen) || finished.superseded) return;
   agentBuf = '';
   const shown = finished.parsed?.text || '';
-  if (!shown) stopSpeech();
+  window.__arrowTurn = (window.__arrowTurn || 0) + 1;
+  // 空的最终帧来自本地卡片播报的尾巴。这时下一句可能已经发进房间，再发 [B] 会把它打断。
+  // 「正在处理。」是房间在出函数前的占位，终句到达后不再留在对话里。
+  if (agentBubble && bubbleText(agentBubble).textContent.trim() === '正在处理。') {
+    agentBubble.remove();
+    agentBubble = null;
+  }
   paintAgent(shown);
+  if (finished.image?.url) addPicture(finished.image.url, finished.image.name);
   agentBubble = null;
   lastAsk = '';
   releaseRoom(gen);
@@ -544,10 +587,44 @@ $('nav').onclick = (e) => {
   if (btn.dataset.view === 'audit') loadAudit();
 };
 
-const OPERATE = /打开|关闭|关掉|关上|开一下|关一下|启动|启用|停用|别|冲水|大冲|小冲|^冲$|进水|放水|夜灯|翻盖|脚触|润瓷|报修|维修|定时|每天|自动/;
-const REPAIR = /报修|维修/;
-const TOPIC = /调用了多少|调用次数|多少次|失败了几次|成功了几次|用得最久|使用时长|用了多久|用了多少分钟/;
-const REPAIR_LINK = 'arrowhome://repair/create?from=ai_assistant';
+const OPERATE = /打开|关闭|关掉|关上|开一下|关一下|启动|启用|停用|冲水|大冲|小冲|^冲$|进水|放水|夜灯|翻盖|脚触|润瓷|定时|每天|自动|别夜灯|不要夜灯/;
+const PRODUCT_ASK = /多少|什么|吗|怎么|如何|哪|是否|为什么|要求|范围|差别|区别|分别|几档|多久|几年|会不会|到底|还是|[？?]$/;
+const PRODUCT_CMD = /把|帮我|给我|来个/;
+
+function wantsDevice(text) {
+  if (!OPERATE.test(text)) return false;
+  // 「大冲」这种短操作仍选设备。带问号、问水压或问冲不冲的说明书问答走房间。
+  if (/[？?]$/.test(text) && !PRODUCT_CMD.test(text)) return false;
+  if (PRODUCT_ASK.test(text) && !PRODUCT_CMD.test(text)) return false;
+  return true;
+}
+
+function repairKind(text) {
+  if (REPAIR_PROGRESS.test(text)) return 'progress';
+  if (!REPAIR_CREATE.test(text)) return '';
+  // 保修几年、喷枪不出水先查什么，走说明书。我要报修、要修、帮我维修才出卡。
+  if (PRODUCT_ASK.test(text) && !/我要报修|要修|帮我维修/.test(text)) return '';
+  return 'report';
+}
+const REPAIR_PROGRESS = /进度|到哪|派工|受理/;
+const REPAIR_CREATE = /报修|保修|维修|坏了|不出水|漏水|要修/;
+const TOPIC = /调用了多少|调用次数|多少次|失败了几次|成功了几次|安排检修|检修报告|生成报告|用得最久|使用时长|用了多久|用了多少分钟/;
+const REPAIR_LINKS = {
+  report: {
+    deeplink: 'arrowhome://repair/create?from=ai_assistant',
+    title: '报修',
+    body: '助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。',
+    linkText: '打开报修页',
+    say: '已准备好报修入口。',
+  },
+  progress: {
+    deeplink: 'arrowhome://repair/list?from=ai_assistant',
+    title: '报修进度',
+    body: '助手不查询工单。点击后进入箭牌 App 的报修记录，查看受理和派工进度。',
+    linkText: '查看报修进度',
+    say: '已准备好进度入口。',
+  },
+};
 
 function releaseRoom(gen) {
   if (!turns.release(gen)) return;
@@ -558,13 +635,20 @@ function releaseRoom(gen) {
 }
 
 async function openTurn(kind) {
-  agentBuf = '';
-  agentBubble?.remove();
-  agentBubble = null;
-  clearTimeout(roomTimer);
+  if (turns.snapshot().turnKind === 'room') {
+    agentBuf = '';
+    agentBubble?.remove();
+    agentBubble = null;
+    clearTimeout(roomTimer);
+  }
   const gen = await turns.openTurn(kind);
   if (!gen) return 0;
-  if (kind === 'room') roomTimer = setTimeout(() => releaseRoom(gen), 20000);
+  if (kind === 'room') {
+    roomTimer = setTimeout(() => {
+      window.__arrowTurn = (window.__arrowTurn || 0) + 1;
+      releaseRoom(gen);
+    }, 20000);
+  }
   return gen;
 }
 
@@ -580,20 +664,23 @@ async function sayToRoom(value) {
   }
 }
 
-async function showRepair() {
+async function showRepair(kind) {
   const gen = await openTurn('local');
   if (!gen) return 0;
-  const say = '已准备好报修入口。';
-  addBubble('agent', say);
+  const copy = REPAIR_LINKS[kind] || REPAIR_LINKS.report;
+  addBubble('agent', copy.say);
   if (typeof window.BRTC_SendMessageToUser === 'function') {
-    speakLocal(say);
+    speakLocal(copy.say);
   }
   addCard({
     event: 'demo.repair',
     data: {
-      title: '报修',
-      body: '助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。',
-      deeplink: REPAIR_LINK,
+      kind: kind === 'progress' ? 'progress' : 'report',
+      title: copy.title,
+      body: copy.body,
+      linkText: copy.linkText,
+      deeplink: copy.deeplink,
+      note: copy.say,
     },
   });
   return gen;
@@ -636,15 +723,17 @@ async function sendText(text) {
   const value = String(text || '').trim();
   if (!value || !sessionId) return;
   showUser(value);
-  // 上一轮还在领代号或等房间时，先停掉它，再只处理这一句。
-  // 用户文字已经留在对话里。只发 [B] 不会让这一句成为新的一轮。
+  // 上一轮还在等房间时，停掉播报并作废它的代号。这一句由本次发送处理。
+  // 本地卡片留下的排队文本不能替换后面的产品问答。
+  if (turns.waiting()) turns.next();
   const shot = turns.snapshot();
-  if (shot.turnBusy || shot.turnOpening) {
+  if (shot.turnOpening || (shot.turnBusy && shot.turnKind === 'room')) {
     stopSpeech();
-    if (shot.turnOpening || shot.turnKind === 'room') {
-      turns.takeover(value);
-    }
+    turns.takeover(value);
+    if (turns.waiting()) turns.next();
   }
+  // 房间回放若没被认成回声，会再次进入这里。原话已经在等房间时不再发第二遍。
+  if (sameText(sentText, value) && turns.snapshot().turnKind === 'room' && turns.snapshot().turnBusy) return;
   if (TOPIC.test(value)) {
     const gen = await openTurn('topic');
     if (!gen) return;
@@ -655,8 +744,9 @@ async function sendText(text) {
         body: JSON.stringify({ text: value }),
       });
       if (stale(gen)) return;
-      const answer = out.text || '适配层没有返回结论。';
+      const answer = out.text || (out.html ? '检修报告已生成。' : '适配层没有返回结论。');
       addBubble('agent', answer);
+      if (out.html) addReport(out.html);
       if (typeof window.BRTC_SendMessageToUser === 'function') {
         speakLocal(answer);
       }
@@ -667,12 +757,13 @@ async function sendText(text) {
     }
     return;
   }
-  if (REPAIR.test(value)) {
-    const gen = await showRepair();
+  const repair = repairKind(value);
+  if (repair) {
+    const gen = await showRepair(repair);
     if (turns.finishLocal(gen)) releaseRoom(gen);
     return;
   }
-  if (OPERATE.test(value)) {
+  if (wantsDevice(value)) {
     rememberAsk(value);
     localIntentAt = Date.now();
     const pendingBubble = addBubble('agent', '正在确认设备…');

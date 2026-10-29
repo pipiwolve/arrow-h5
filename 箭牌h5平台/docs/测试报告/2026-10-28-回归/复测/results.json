@@ -1,0 +1,560 @@
+{
+  "base": "http://127.0.0.1:8788",
+  "gap": 8000,
+  "wait": 35000,
+  "at": "2026-10-28T06:20:57.792Z",
+  "results": [
+    {
+      "id": "AKB-16",
+      "brand": "箭牌",
+      "category": "故障",
+      "question": "AKB1357喷枪不出水先查什么？",
+      "answer": "喷枪不出水啊.先看是否停水、止水阀是否关闭、过滤器是否堵塞、进水管是否折曲。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 4365,
+      "note": "停水、止水阀、过滤器、进水管折曲",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "你好，我是箭牌智家助手。可以直接说想打开或关闭的设备，也可以问产品怎么用。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357喷枪不出水先查什么？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "喷枪不出水啊.先看是否停水、止水阀是否关闭、过滤器是否堵塞、进水管是否折曲。"
+        }
+      ]
+    },
+    {
+      "id": "AKB-19",
+      "brand": "箭牌",
+      "category": "保修",
+      "question": "AKB1357整机保修几年？客服电话是多少？",
+      "answer": "保修和客服啊.箭牌AKB1357L/AKB1357M自销售之日起整机保修六年。  \n箭牌客服热线400-8301831。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 3414,
+      "note": "家用保修，耗材不含",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "你好，我是箭牌智家助手。可以直接说想打开或关闭的设备，也可以问产品怎么用。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357喷枪不出水先查什么？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "喷枪不出水啊.先看是否停水、止水阀是否关闭、过滤器是否堵塞、进水管是否折曲。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357整机保修几年？客服电话是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "保修和客服啊.箭牌AKB1357L/AKB1357M自销售之日起整机保修六年。  \n箭牌客服热线400-8301831。"
+        }
+      ]
+    },
+    {
+      "id": "AKB-20",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "AKB1357L和AKB1357M功能有什么差别？",
+      "answer": "说明书未区分。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 3627,
+      "note": "说明书未区分。回答应说明未记载，不能编差异。expect_contains用「未」覆盖未区分、未记载、没有写明",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "AKB1357喷枪不出水先查什么？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "喷枪不出水啊.先看是否停水、止水阀是否关闭、过滤器是否堵塞、进水管是否折曲。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357整机保修几年？客服电话是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "保修和客服啊.箭牌AKB1357L/AKB1357M自销售之日起整机保修六年。  \n箭牌客服热线400-8301831。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357L和AKB1357M功能有什么差别？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "说明书未区分。"
+        }
+      ]
+    },
+    {
+      "id": "FLM-01",
+      "brand": "法恩莎",
+      "category": "参数",
+      "question": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？",
+      "answer": "",
+      "pass": false,
+      "missing": [
+        "85W",
+        "46W"
+      ],
+      "banned": [],
+      "empty": true,
+      "timedOut": true,
+      "ms": 35234,
+      "note": "冲水过程中停止座圈加热",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "喷枪不出水啊.先看是否停水、止水阀是否关闭、过滤器是否堵塞、进水管是否折曲。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357整机保修几年？客服电话是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "保修和客服啊.箭牌AKB1357L/AKB1357M自销售之日起整机保修六年。  \n箭牌客服热线400-8301831。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357L和AKB1357M功能有什么差别？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "说明书未区分。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？"
+        }
+      ]
+    },
+    {
+      "id": "FLM-03",
+      "brand": "法恩莎",
+      "category": "参数",
+      "question": "FLM0814S-Q适用水压是多少？",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM连接水源时，适用水压为静压0.02到0.75MPa。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 4061,
+      "note": "静压0.02到0.75兆帕",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "保修和客服啊.箭牌AKB1357L/AKB1357M自销售之日起整机保修六年。  \n箭牌客服热线400-8301831。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357L和AKB1357M功能有什么差别？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "说明书未区分。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q适用水压是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM连接水源时，适用水压为静压0.02到0.75MPa。"
+        }
+      ]
+    },
+    {
+      "id": "FLM-09",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "FLM0814S-Q用哪个小程序？",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM使用法恩莎智联小程序。微信搜索法恩莎智联。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 3936,
+      "note": "蓝牙靠近使用，手机NFC需打开",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "说明书未区分。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q适用水压是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM连接水源时，适用水压为静压0.02到0.75MPa。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q用哪个小程序？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM使用法恩莎智联小程序。微信搜索法恩莎智联。"
+        }
+      ]
+    },
+    {
+      "id": "FLM-11",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q上电不能开机怎么办？",
+      "answer": "正在处理。\n已打开报修页。单据进度也在这个页面里查看。",
+      "pass": false,
+      "missing": [
+        "控制板"
+      ],
+      "banned": [],
+      "empty": false,
+      "timedOut": true,
+      "ms": 35479,
+      "note": "插头重接，或更换控制板。这是维修向描述",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM连接水源时，适用水压为静压0.02到0.75MPa。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q用哪个小程序？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM使用法恩莎智联小程序。微信搜索法恩莎智联。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q上电不能开机怎么办？"
+        },
+        {
+          "kind": "bubble agent thinking",
+          "text": "正在处理。"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "已打开报修页。单据进度也在这个页面里查看。"
+        }
+      ]
+    },
+    {
+      "id": "FLM-12",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q座温探头开路，上电会怎样？",
+      "answer": "",
+      "pass": false,
+      "missing": [
+        "三声",
+        "座圈加热"
+      ],
+      "banned": [],
+      "empty": true,
+      "timedOut": true,
+      "ms": 35342,
+      "note": "初始化响三声，并关闭座圈加热直到恢复",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q用哪个小程序？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM使用法恩莎智联小程序。微信搜索法恩莎智联。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q上电不能开机怎么办？"
+        },
+        {
+          "kind": "bubble agent thinking",
+          "text": "正在处理。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q座温探头开路，上电会怎样？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM座圈温度探头短路或开路时，上电初始化蜂鸣器响三声。"
+        }
+      ]
+    },
+    {
+      "id": "NIL-06",
+      "brand": "安华",
+      "category": "功能",
+      "question": "NiL125臀洗和烘干各自动停在多久？",
+      "answer": "烘干多久啊.安华NiL125L/NiL125M臀洗和妇洗约90秒后自动结束，清洗中再按一次可停止移动。烘干约3分钟后自动结束。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 3482,
+      "note": "臀洗妇洗约90秒，烘干约3分钟",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q上电不能开机怎么办？"
+        },
+        {
+          "kind": "bubble agent thinking",
+          "text": "正在处理。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q座温探头开路，上电会怎样？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM座圈温度探头短路或开路时，上电初始化蜂鸣器响三声。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "NiL125臀洗和烘干各自动停在多久？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "烘干多久啊.安华NiL125L/NiL125M臀洗和妇洗约90秒后自动结束，清洗中再按一次可停止移动。烘干约3分钟后自动结束。"
+        }
+      ]
+    },
+    {
+      "id": "NIL-14",
+      "brand": "安华",
+      "category": "边界",
+      "question": "NiL125自动冲水关掉之后，到底冲不冲水？",
+      "answer": "说明书在自动冲水关闭处有冲突。一句是离座自动冲水有效打开、着座超过7秒、离座后5秒自动大冲一次。另一句是无论是否清洗、落座时间是否满足，都不进行自动冲水。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 4338,
+      "note": "原文两句相反。回答应说明说明书表述冲突，而不是选一句",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q座温探头开路，上电会怎样？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM座圈温度探头短路或开路时，上电初始化蜂鸣器响三声。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "NiL125臀洗和烘干各自动停在多久？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "烘干多久啊.安华NiL125L/NiL125M臀洗和妇洗约90秒后自动结束，清洗中再按一次可停止移动。烘干约3分钟后自动结束。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "NiL125自动冲水关掉之后，到底冲不冲水？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "说明书在自动冲水关闭处有冲突。一句是离座自动冲水有效打开、着座超过7秒、离座后5秒自动大冲一次。另一句是无论是否清洗、落座时间是否满足，都不进行自动冲水。"
+        }
+      ]
+    },
+    {
+      "id": "X-01",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "AKB1357、FLM0814S-Q和NiL125的客服电话分别是多少？",
+      "answer": "客服电话啊箭牌AKB1357客服热线400-8301831。  \n法恩莎FLM0814S-Q客服热线400-101-3862。  \n安华NiL125客服热线400-1066-828。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 5453,
+      "note": "三号必须对应到箭牌、法恩莎、安华，不能互换",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "NiL125臀洗和烘干各自动停在多久？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "烘干多久啊.安华NiL125L/NiL125M臀洗和妇洗约90秒后自动结束，清洗中再按一次可停止移动。烘干约3分钟后自动结束。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "NiL125自动冲水关掉之后，到底冲不冲水？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "说明书在自动冲水关闭处有冲突。一句是离座自动冲水有效打开、着座超过7秒、离座后5秒自动大冲一次。另一句是无论是否清洗、落座时间是否满足，都不进行自动冲水。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357、FLM0814S-Q和NiL125的客服电话分别是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "客服电话啊箭牌AKB1357客服热线400-8301831。  \n法恩莎FLM0814S-Q客服热线400-101-3862。  \n安华NiL125客服热线400-1066-828。"
+        }
+      ]
+    },
+    {
+      "id": "X-02",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "这三款坐便器哪一款没有臀洗？",
+      "answer": "臀洗功能啊法恩莎FLM0814S-QL/FLM0814S-QM没有臀洗。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 3514,
+      "note": "只有法恩莎轻智能没有臀洗",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "NiL125自动冲水关掉之后，到底冲不冲水？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "说明书在自动冲水关闭处有冲突。一句是离座自动冲水有效打开、着座超过7秒、离座后5秒自动大冲一次。另一句是无论是否清洗、落座时间是否满足，都不进行自动冲水。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "AKB1357、FLM0814S-Q和NiL125的客服电话分别是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "客服电话啊箭牌AKB1357客服热线400-8301831。  \n法恩莎FLM0814S-Q客服热线400-101-3862。  \n安华NiL125客服热线400-1066-828。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "这三款坐便器哪一款没有臀洗？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "臀洗功能啊法恩莎FLM0814S-QL/FLM0814S-QM没有臀洗。"
+        }
+      ]
+    },
+    {
+      "id": "X-03",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "三款的额定功率分别是多少？",
+      "answer": "额定功率啊箭牌AKB1357额定输入功率900W，即热式。  \n安华NiL125额定输入功率790W，即热式。  \n法恩莎FLM0814S-Q没有即热清洗功率，冲水额定功率85W，座圈加热功率46W。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 4569,
+      "note": "箭牌900W，安华790W，法恩莎冲水额定功率85W。法恩莎还有座圈加热46W",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "AKB1357、FLM0814S-Q和NiL125的客服电话分别是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "客服电话啊箭牌AKB1357客服热线400-8301831。  \n法恩莎FLM0814S-Q客服热线400-101-3862。  \n安华NiL125客服热线400-1066-828。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "这三款坐便器哪一款没有臀洗？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "臀洗功能啊法恩莎FLM0814S-QL/FLM0814S-QM没有臀洗。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "三款的额定功率分别是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "额定功率啊箭牌AKB1357额定输入功率900W，即热式。  \n安华NiL125额定输入功率790W，即热式。  \n法恩莎FLM0814S-Q没有即热清洗功率，冲水额定功率85W，座圈加热功率46W。"
+        }
+      ]
+    },
+    {
+      "id": "X-04",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "请告诉我AKB1357的安装孔距和外形毫米尺寸。",
+      "answer": "说明书未记载。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 2673,
+      "note": "正文没有可引用毫米数。回答说明书未记载即可",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "这三款坐便器哪一款没有臀洗？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "臀洗功能啊法恩莎FLM0814S-QL/FLM0814S-QM没有臀洗。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "三款的额定功率分别是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "额定功率啊箭牌AKB1357额定输入功率900W，即热式。  \n安华NiL125额定输入功率790W，即热式。  \n法恩莎FLM0814S-Q没有即热清洗功率，冲水额定功率85W，座圈加热功率46W。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "请告诉我AKB1357的安装孔距和外形毫米尺寸。"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "说明书未记载。"
+        }
+      ]
+    }
+  ]
+}

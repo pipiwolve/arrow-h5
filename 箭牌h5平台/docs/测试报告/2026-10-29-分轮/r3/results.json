@@ -1,0 +1,48 @@
+{
+  "file": "/tmp/kb-rounds/r3.jsonl",
+  "at": "2026-10-29T07:12:22.034Z",
+  "results": [
+    {
+      "id": "W19",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "AKB1357L和M差别大吗",
+      "answer": "说明书未区分。",
+      "ms": 3240,
+      "note": "说明书未区分",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W20",
+      "style": "同义",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "这三台里哪台不能冲着洗",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM没有臀洗。",
+      "ms": 2951,
+      "note": "冲着洗指臀洗",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W21",
+      "style": "口语",
+      "brand": "跨型号",
+      "category": "保修",
+      "question": "三家客服电话各是多少",
+      "answer": "箭牌客服400-8301831，法恩莎客服400-101-3862，安华客服400-1066-828。",
+      "ms": 3784,
+      "note": "三个号码都要出现",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

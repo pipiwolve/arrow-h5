@@ -1,0 +1,112 @@
+{
+  "base": "http://127.0.0.1:8788",
+  "gap": 10000,
+  "wait": 40000,
+  "at": "2026-10-28T06:22:35.814Z",
+  "results": [
+    {
+      "id": "FLM-01",
+      "brand": "法恩莎",
+      "category": "参数",
+      "question": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？",
+      "answer": "功率参数啊法恩莎FLM0814S-QL/FLM0814S-QM冲水额定功率85W。  \n法恩莎FLM0814S-QL/FLM0814S-QM座圈加热功率46W。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 5953,
+      "note": "冲水过程中停止座圈加热",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "你好，我是箭牌智家助手。可以直接说想打开或关闭的设备，也可以问产品怎么用。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "功率参数啊法恩莎FLM0814S-QL/FLM0814S-QM冲水额定功率85W。  \n法恩莎FLM0814S-QL/FLM0814S-QM座圈加热功率46W。"
+        }
+      ]
+    },
+    {
+      "id": "FLM-11",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q上电不能开机怎么办？",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM上电不能开机时，先看控制板电源插头是否接错或松动，重新接插。控制板不良则更换控制板模块。这是维修向说明，不要自行拆机。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 5538,
+      "note": "插头重接，或更换控制板。这是维修向描述",
+      "tail": [
+        {
+          "kind": "bubble agent",
+          "text": "你好，我是箭牌智家助手。可以直接说想打开或关闭的设备，也可以问产品怎么用。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "功率参数啊法恩莎FLM0814S-QL/FLM0814S-QM冲水额定功率85W。  \n法恩莎FLM0814S-QL/FLM0814S-QM座圈加热功率46W。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q上电不能开机怎么办？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM上电不能开机时，先看控制板电源插头是否接错或松动，重新接插。控制板不良则更换控制板模块。这是维修向说明，不要自行拆机。"
+        }
+      ]
+    },
+    {
+      "id": "FLM-12",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q座温探头开路，上电会怎样？",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM座圈温度探头短路或开路时，上电初始化蜂鸣器响三声。探头短路、开路或座温超温时关闭座圈加热，故障恢复后才重新开启。说明书没有给出E代码。",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "empty": false,
+      "timedOut": false,
+      "ms": 4627,
+      "note": "初始化响三声，并关闭座圈加热直到恢复",
+      "tail": [
+        {
+          "kind": "bubble user",
+          "text": "法恩莎FLM0814S-Q冲水功率和座圈加热功率是多少？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "功率参数啊法恩莎FLM0814S-QL/FLM0814S-QM冲水额定功率85W。  \n法恩莎FLM0814S-QL/FLM0814S-QM座圈加热功率46W。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q上电不能开机怎么办？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM上电不能开机时，先看控制板电源插头是否接错或松动，重新接插。控制板不良则更换控制板模块。这是维修向说明，不要自行拆机。"
+        },
+        {
+          "kind": "bubble user",
+          "text": "FLM0814S-Q座温探头开路，上电会怎样？"
+        },
+        {
+          "kind": "bubble agent",
+          "text": "法恩莎FLM0814S-QL/FLM0814S-QM座圈温度探头短路或开路时，上电初始化蜂鸣器响三声。探头短路、开路或座温超温时关闭座圈加热，故障恢复后才重新开启。说明书没有给出E代码。"
+        }
+      ]
+    }
+  ]
+}

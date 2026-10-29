@@ -60,5 +60,8 @@ export function userEcho(text, sentText) {
   if (!sent) return { text: src, echo: false };
   const got = src.replace(/\s+/g, '');
   const want = sent.replace(/\s+/g, '');
-  return { text: src, echo: got === want || (want.startsWith(got) && got.length > 0) };
+  if (!got || !want) return { text: src, echo: false };
+  if (got === want || want.startsWith(got)) return { text: src, echo: true };
+  const extra = got.length - want.length;
+  return { text: src, echo: extra > 0 && extra <= 3 && got.endsWith(want) };
 }

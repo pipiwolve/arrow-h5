@@ -57,8 +57,17 @@
       "report": "arrowhome://repair/create?from=ai_assistant",
       "progress": "arrowhome://repair/list?from=ai_assistant"
     },
-    "note": "已打开报修页。单据进度也在这个页面里查看。",
-    "cardTitle": "报修",
-    "cardBody": "助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。"
+    "report": {
+      "note": "已准备好报修入口。",
+      "cardTitle": "报修",
+      "cardBody": "助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。",
+      "linkText": "打开报修页"
+    },
+    "progress": {
+      "note": "已准备好进度入口。",
+      "cardTitle": "报修进度",
+      "cardBody": "助手不查询工单。点击后进入箭牌 App 的报修记录，查看受理和派工进度。",
+      "linkText": "查看报修进度"
+    }
   }
 }

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>检修报告预览</title>
+<style>
+  body { margin: 0; background: #f7f7f7; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+  iframe { display: block; width: min(860px, 100%); height: 100vh; margin: 0 auto; border: 0; background: #fff; }
+</style>
+</head>
+<body>
+<iframe id="page" title="检修报告" sandbox></iframe>
+<script>
+const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>2026年10月智能设备检修报告</title>
+<style>
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f4f6f9; color: #2b3440; line-height: 1.6; padding: 32px 16px; }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 26px; color: #1f2d3d; text-align: center; margin-bottom: 6px; }
+  .sub { text-align: center; color: #8492a6; font-size: 14px; margin-bottom: 28px; }
+  .stats { display: flex; gap: 16px; margin-bottom: 28px; }
+  .stat { flex: 1; background: #fff; border-radius: 12px; padding: 22px 16px; text-align: center; }
+  .stat .num { font-size: 34px; font-weight: 700; }
+  .blue { color: #3b7dd8; } .green { color: #2e9e5b; } .red { color: #d64541; }
+  .label { margin-top: 4px; font-size: 14px; color: #8492a6; }
+  .card { background: #fff; border-radius: 12px; padding: 22px 24px; margin-bottom: 24px; }
+  h2 { font-size: 18px; margin-bottom: 14px; }
+  .alert { background: #fff5f5; border: 1px solid #f3cccc; border-radius: 10px; padding: 14px 16px; color: #a03530; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #edf0f4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>2026年10月智能设备检修报告</h1>
+  <p class="sub">标题写成了 10 月。记录实际是 2026-09-01 至 2026-09-30。</p>
+  <div class="stats">
+    <div class="stat"><div class="num blue">30</div><div class="label">记录 30 条</div></div>
+    <div class="stat"><div class="num green">14</div><div class="label">成功 14 次</div></div>
+    <div class="stat"><div class="num red">16</div><div class="label">失败 16 次</div></div>
+  </div>
+  <div class="card">
+    <h2>检修结论</h2>
+    <div class="alert">主卫ACH102智能浴缸的进水失败 9 次，建议安排检修。</div>
+  </div>
+  <div class="card">
+    <h2>失败明细</h2>
+    <table>
+      <tr><th>位置</th><th>设备</th><th>指令</th><th>结果</th></tr>
+      <tr><td>主卫</td><td>ACH102智能浴缸</td><td>进水</td><td>失败 9 次，失败耗时 129 秒。</td></tr>
+      <tr><td>主卫</td><td>QN-PRO智能镜柜</td><td>夜灯</td><td>失败 5 次，失败耗时 44 秒。</td></tr>
+      <tr><td>客卫</td><td>ACH102智能浴缸</td><td>进水</td><td>失败 2 次，失败耗时 22 秒。</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>`;
+document.getElementById('page').srcdoc = html;
+</script>
+</body>
+</html>

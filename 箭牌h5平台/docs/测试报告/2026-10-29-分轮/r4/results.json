@@ -1,0 +1,50 @@
+{
+  "file": "/tmp/kb-rounds/r4.jsonl",
+  "at": "2026-10-29T07:13:04.086Z",
+  "results": [
+    {
+      "id": "W24",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎泡沫液大概能加多少毫升",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM泡沫液盒容量约450毫升。  \n加多会溢出。  \n准备发给平台。",
+      "ms": 3863,
+      "note": "泡沫液盒约450毫升",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W28",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华节能开着，放多久没人动会再进去",
+      "answer": "安华智能马桶节能模式待机超时约15分钟。  \n若无人触碰则自动进入待机。  \n准备发给平台。",
+      "ms": 3085,
+      "note": "节能是连续1小时，不是商务模式的72小时",
+      "pass": false,
+      "missing": [
+        "1小时"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W29",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "箭牌1357刚冲完为什么不能马上再冲",
+      "answer": "箭牌AKB1357L/AKB1357M刚冲完后需间隔约40秒才能再次冲水。  \n为防止空抽，系统设有保护机制。  \n准备发给平台。",
+      "ms": 3207,
+      "note": "间隔约40秒",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

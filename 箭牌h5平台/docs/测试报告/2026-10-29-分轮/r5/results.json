@@ -1,0 +1,54 @@
+{
+  "file": "/tmp/kb-rounds/r5.jsonl",
+  "at": "2026-10-29T07:14:14.234Z",
+  "results": [
+    {
+      "id": "W30",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎刚冲完再按一下，会怎么样",
+      "answer": "刚冲完再按一下，会响两声，补水约30秒期间不会启动。",
+      "ms": 3309,
+      "note": "补水约30秒，再冲不启动",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W33",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "法恩莎夜灯不亮，先查哪里",
+      "answer": "已准备好报修入口。",
+      "ms": 2673,
+      "note": "问法进房间，不选设备",
+      "pass": false,
+      "missing": [
+        "灯"
+      ],
+      "banned": [
+        "已准备好报修入口"
+      ],
+      "anyHit": []
+    },
+    {
+      "id": "W34",
+      "style": "口语",
+      "brand": "安华",
+      "category": "故障",
+      "question": "安华座圈摸着是凉的，先看什么",
+      "answer": "",
+      "ms": 32411,
+      "note": "先看座温是否关档",
+      "pass": false,
+      "missing": [
+        "关闭"
+      ],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

@@ -1,0 +1,554 @@
+{
+  "file": "产品文档/知识库测试集/产品问答改写测试集.jsonl",
+  "at": "2026-10-29T06:54:24.037Z",
+  "results": [
+    {
+      "id": "W01",
+      "style": "开放列举",
+      "brand": "箭牌",
+      "category": "开放",
+      "question": "AKB1357 有哪些功能",
+      "answer": "AKB1357的功能啊1. 臀洗、妇洗、助便畅洗、深层净洗、全面护理、暖风烘干、座圈加热、智慧清洁、全域除菌。  \n2. 泡沫盾仅限有此功能的产品。  \n3. 女性清洗、女士清洗都是妇洗。洗屁股、冲着洗都是臀洗。",
+      "ms": 6251,
+      "note": "只列清洗稿写明的功能",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W02",
+      "style": "开放列举",
+      "brand": "箭牌",
+      "category": "开放",
+      "question": "AKB1357都能干什么",
+      "answer": "1. 臀洗、妇洗、助便畅洗、深层净洗、全面护理、暖风烘干、座圈加热、智慧清洁、全域除菌。  \n2. 泡沫盾仅限有此功能的产品。  \n3. 女性清洗、女士清洗都是妇洗。洗屁股、冲着洗都是臀洗。",
+      "ms": 4747,
+      "note": "不复用上传稿Q行",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W03",
+      "style": "开放列举",
+      "brand": "箭牌",
+      "category": "开放",
+      "question": "给我介绍一下AKB1357这款马桶",
+      "answer": "1. 臀洗、妇洗、助便畅洗、深层净洗、全面护理、暖风烘干、座圈加热、智慧清洁、全域除菌。  \n2. 泡沫盾仅限有此功能的产品。  \n3. 女性清洗、女士清洗都是妇洗。洗屁股、冲着洗都是臀洗。",
+      "ms": 4908,
+      "note": "介绍也不许补稿外功能",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W04",
+      "style": "同义",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "箭牌1357这马桶费电吗，加热是即热的那种吗",
+      "answer": "这款马桶的耗电和加热方式啊900W，即热式。  \n条件：环境温度25°C，湿度65%，入水水压0.2MPa，入水温度15°C，臀洗和妇洗取最大值。水温、座温、水量按最高档流量。",
+      "ms": 5253,
+      "note": "不说额定功率",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W05",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "坐上AKB1357那个圈，最热大概多少度，能调几档",
+      "answer": "39°C，共5档。  \n条件：环境温度25°C，湿度65%，入水水压0.2MPa，入水温度15°C，臀洗和妇洗取最大值。水温、座温、水量按最高档流量。",
+      "ms": 5568,
+      "note": "不说座圈温度怎么调",
+      "pass": false,
+      "missing": [
+        "33"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W06",
+      "style": "同义",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "AKB1357女性清洗一次大概持续多久",
+      "answer": "1. 女性清洗一次约90秒。  \n2. 遥控时长固定约90秒，小程序或App可调。  \n3. 按停止可结束。",
+      "ms": 5058,
+      "note": "女性清洗指妇洗",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W07",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "故障",
+      "question": "AKB1357屏幕跳出E1，是不是水太烫了",
+      "answer": "1. 是，出水温度高于45°C。  \n2. 温度恢复正常后解除。  \n3. 请等待或检查水温。",
+      "ms": 4681,
+      "note": "E1是出水温度高于45°C",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W08",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "箭牌1357配网，微信里搜哪个，Wi-Fi有没有要求",
+      "answer": "配网步骤啊1. 箭牌智联小程序。  \n2. 2.4G Wi-Fi，蓝牙需打开。",
+      "ms": 3955,
+      "note": "不说用什么小程序",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W09",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "AKB1357除菌那个盐加满，大概能用多少回",
+      "answer": "1. 加满一次大约可用100次。  \n2. 加盐口盖必须关严，否则水可能溢出。  \n3. 盖子丢失则暂停此功能。",
+      "ms": 7252,
+      "note": "全域除菌加满约100次",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W10",
+      "style": "多事实",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "AKB1357座圈、清洗水和暖风各能调到多少度",
+      "answer": "",
+      "ms": 29799,
+      "note": "三段温度都要出现",
+      "pass": false,
+      "missing": [
+        "33",
+        "32",
+        "35"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W11",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "保养",
+      "question": "1357滤芯坏了算不算保修，一般多久得换一次",
+      "answer": "",
+      "ms": 29945,
+      "note": "带问号的保养问答进房间",
+      "pass": false,
+      "missing": [
+        "18个月"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W12",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "路由",
+      "question": "我要保修",
+      "answer": "已准备好报修入口。\n报修\n助手不创建工单。点击后进入箭牌 App 的报修页，填写设备和问题。\n打开报修页",
+      "ms": 2465,
+      "note": "明确要保修才出报修卡，不念客服电话",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W13",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "保修",
+      "question": "AKB1357整机保修几年？客服电话是多少？",
+      "answer": "",
+      "ms": 30453,
+      "note": "写作说明不要念给用户",
+      "pass": false,
+      "missing": [
+        "六年",
+        "400-8301831"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W14",
+      "style": "路由",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q上电不能开机怎么办？",
+      "answer": "",
+      "ms": 28474,
+      "note": "故障排查进知识库",
+      "pass": false,
+      "missing": [
+        "控制板"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W15",
+      "style": "缺型号",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎这款轻智能的能洗屁股吗",
+      "answer": "",
+      "ms": 28328,
+      "note": "没有型号时应否认或追问，不要编时长",
+      "pass": false,
+      "missing": [
+        "须命中其一"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W16",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华马桶放好几天没人用，座圈加热会不会自己关掉",
+      "answer": "1. 会，连续72小时无操作进入商务模式，关闭座圈加热。  \n2. 商务模式不是节能，是独立运行状态。  \n3. 按任意键可退出。",
+      "ms": 4414,
+      "note": "好几天对应商务模式72小时",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W17",
+      "style": "同义",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华做完女士清洗起身，它冲大的还是小的",
+      "answer": "",
+      "ms": 29338,
+      "note": "女士清洗指妇洗",
+      "pass": false,
+      "missing": [
+        "小冲"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W18",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "1357坑距多少，长宽高给我一个数",
+      "answer": "",
+      "ms": 28774,
+      "note": "不许用常见值或其他型号填数",
+      "pass": false,
+      "missing": [
+        "须命中其一"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W19",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "AKB1357L和M差别大吗",
+      "answer": "",
+      "ms": 28451,
+      "note": "说明书未区分",
+      "pass": false,
+      "missing": [
+        "未"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W20",
+      "style": "同义",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "这三台里哪台不能冲着洗",
+      "answer": "",
+      "ms": 29771,
+      "note": "冲着洗指臀洗",
+      "pass": false,
+      "missing": [
+        "法恩莎"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W21",
+      "style": "口语",
+      "brand": "跨型号",
+      "category": "保修",
+      "question": "三家客服电话各是多少",
+      "answer": "",
+      "ms": 28733,
+      "note": "三个号码都要出现",
+      "pass": false,
+      "missing": [
+        "400-8301831",
+        "400-101-3862",
+        "400-1066-828"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W22",
+      "style": "口语",
+      "brand": "跨型号",
+      "category": "参数",
+      "question": "三款功率大概差多少",
+      "answer": "900W、790W、85W和46W。  \n条件：箭牌AKB1357额定输入功率900W，安华NiL125额定输入功率790W，法恩莎冲水额定功率85W、座圈加热46W。",
+      "ms": 5229,
+      "note": "箭牌900，安华790，法恩莎冲水85",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W23",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎这马桶座圈一共几档，算上关掉的吗",
+      "answer": "1. 共六档，包括关闭的0档。  \n2. 侧面功能键长按约3秒，或长按遥控器冲水键约3秒，按0、1、3、5、0的顺序调一档。  \n3. 小程序可调任意档。",
+      "ms": 4421,
+      "note": "六档含关闭0档",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W24",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎泡沫液大概能加多少毫升",
+      "answer": "泡沫液容量啊法恩莎马桶配套的泡沫液规格通常是100毫升一瓶。不过具体能加多少，还得看您家马桶泡沫箱的实际容量，建议您查看说明书或咨询客服确认，这样更稳妥。",
+      "ms": 6680,
+      "note": "泡沫液盒约450毫升",
+      "pass": false,
+      "missing": [
+        "450"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W25",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎屋里超过28度，座圈还加热吗",
+      "answer": "温度控制啊1. 室温高于28°C时，座圈加热会关闭。  \n2. 智慧温感开启后，室温高于28°C直接关闭座圈加热。  \n3. 用户主动调座温会关闭智慧温感。",
+      "ms": 5633,
+      "note": "智慧温感高于28°C关闭座圈加热",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W26",
+      "style": "同义",
+      "brand": "安华",
+      "category": "参数",
+      "question": "安华NiL125是不是也要900瓦",
+      "answer": "安华NiL125的功率啊790W。  \n条件：进水温度15°C，出水温度最大档，水压0.2加减0.02MPa，臀洗和妇洗取最大值。",
+      "ms": 5280,
+      "note": "问句里的900可以复述，答案必须给出790",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W27",
+      "style": "口语",
+      "brand": "安华",
+      "category": "参数",
+      "question": "安华NiL125进的水最低不能低于多少度",
+      "answer": "1. 进水温度1到30°C。  \n条件：水压为静压0.10到0.75MPa。",
+      "ms": 6567,
+      "note": "进水1到30°C",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W28",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华节能开着，放多久没人动会再进去",
+      "answer": "1. 说明书未记载具体时长。",
+      "ms": 2893,
+      "note": "节能是连续1小时，不是商务模式的72小时",
+      "pass": false,
+      "missing": [
+        "1小时"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W29",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "箭牌1357刚冲完为什么不能马上再冲",
+      "answer": "说明书未记载。",
+      "ms": 2941,
+      "note": "间隔约40秒",
+      "pass": false,
+      "missing": [
+        "40"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W30",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎刚冲完再按一下，会怎么样",
+      "answer": "说明书未记载。",
+      "ms": 3347,
+      "note": "补水约30秒，再冲不启动",
+      "pass": false,
+      "missing": [
+        "30"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W31",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "箭牌1357还没激活的时候，屏幕上写什么",
+      "answer": "激活前的屏幕显示啊三位以上显示屏显示LOC，二位显示屏显示LC。  \n这时按功能键会嘀嘀嘀三声。",
+      "ms": 3580,
+      "note": "三位屏LOC",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W32",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "家里停电了，AKB1357还能冲水吗",
+      "answer": "停电冲水啊.1. 能，插入配套电池包并按下按钮，灯光亮起后冲水一次。  \n2. 再冲需等灯灭后重按。  \n3. 使用5号碱性电池，需另购10个。",
+      "ms": 4533,
+      "note": "配套电池包",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W33",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "法恩莎夜灯不亮，先查哪里",
+      "answer": "已准备好报修入口。",
+      "ms": 2661,
+      "note": "问法进房间，不选设备",
+      "pass": false,
+      "missing": [
+        "灯"
+      ],
+      "banned": [
+        "已准备好报修入口"
+      ],
+      "anyHit": []
+    },
+    {
+      "id": "W34",
+      "style": "口语",
+      "brand": "安华",
+      "category": "故障",
+      "question": "安华座圈摸着是凉的，先看什么",
+      "answer": "",
+      "ms": 28486,
+      "note": "先看座温是否关档",
+      "pass": false,
+      "missing": [
+        "关闭"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W35",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "泡沫盾是不是每台AKB1357都有",
+      "answer": "1. 不是，泡沫盾仅限有此功能的产品。  \n2. 说明书未记载是否所有AKB1357都有该功能。",
+      "ms": 4739,
+      "note": "仅限有此功能的产品",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": [
+        "仅限",
+        "有此功能"
+      ]
+    },
+    {
+      "id": "W36",
+      "style": "串库",
+      "brand": "法恩莎",
+      "category": "保修",
+      "question": "法恩莎客服是不是400-8301831",
+      "answer": "1. 法恩莎客服热线是400-101-3862。  \n2. 说明书未记载其他号码。",
+      "ms": 3226,
+      "note": "必须改口到法恩莎号码，不能把箭牌号码认成法恩莎",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

@@ -73,23 +73,26 @@ export function createTurn({ scenario, devices, gate, iot, audit, liveDevices })
 
     if (action.action === 'repair.open') {
       const which = action.kind === 'progress' ? 'progress' : 'report';
+      const copy = scenario.repair[which] || {};
       const deeplink = scenario.repair.deeplink[which];
+      const note = copy.note || scenario.repair.note;
       await audit.append({
         kind: 'repair.open', actor: 'app-user', sessionId, level: 'L',
-        decision: 'ALLOW', result: 'SUCCEEDED', deeplink,
+        decision: 'ALLOW', result: 'SUCCEEDED', deeplink, repairKind: which,
       });
       cards.push({
         event: 'demo.repair',
         data: {
           kind: which,
           deeplink,
-          title: scenario.repair.cardTitle || '报修',
-          body: scenario.repair.cardBody || scenario.repair.note,
-          note: scenario.repair.note,
+          title: copy.cardTitle || scenario.repair.cardTitle || '报修',
+          body: copy.cardBody || scenario.repair.cardBody || note,
+          linkText: copy.linkText || (which === 'progress' ? '查看报修进度' : '打开报修页'),
+          note,
           say: action.say || '',
         },
       });
-      return { cards, receipt: scenario.repair.note };
+      return { cards, receipt: note };
     }
 
     const completed = completeAction(action, input.userText);

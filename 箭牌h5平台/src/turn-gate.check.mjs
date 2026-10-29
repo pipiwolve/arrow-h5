@@ -32,7 +32,7 @@ function acceptSpeak(gen, frame) {
 
 const first = await gate.openTurn('room');
 assert.equal(first, 1);
-assert.equal(sent[0], '[B]');
+assert.equal(sent.includes('[B]'), false, '没有上一句在等房间时，第一句不打断');
 assert.equal(acceptText(first, '可以下发'), true);
 
 let releaseFirst = null;
@@ -47,7 +47,7 @@ const late = new Promise((resolve) => {
 
 const second = await gate.openTurn('room');
 assert.equal(second, 2);
-assert.equal(sent.filter((f) => f === '[B]').length, 2);
+assert.equal(sent.filter((f) => f === '[B]').length, 1);
 const lateOut = await late;
 assert.equal(lateOut.kept, false);
 assert.equal(lateOut.speak, false);
@@ -64,7 +64,9 @@ assert.deepEqual(spoken, ['[E]:[CMD]:[TEXT]:AKB 1357 的产品内容在这里。
 assert.equal(shot.turnBusy, false);
 assert.equal(session.turnGen, 2);
 
+const beforeLocal = sent.filter((frame) => frame === '[B]').length;
 const third = await gate.openTurn('intent');
+assert.equal(sent.filter((frame) => frame === '[B]').length, beforeLocal, '上一句已经结束时，本地卡片不再打断房间');
 const during = acceptText(second, '上一句的选择卡说明');
 assert.equal(during, false);
 assert.equal(acceptText(third, '有多台设备符合，选一台再下发。'), true);

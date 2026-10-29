@@ -15,10 +15,13 @@ function createTurnGate({ claim, breakTurn }) {
   }
 
   async function openTurn(kind) {
-    breakTurn();
+    // 报修卡、进度卡、设备选择卡都在页面本地画完。
+    // 只有上一句还在等房间回复时才打断。本地卡片结束后再提问，不发打断。
+    const interruptRoom = turnBusy && turnKind === 'room';
+    if (interruptRoom) breakTurn();
     turnOpening = true;
-    turnBusy = true;
     turnKind = kind;
+    turnBusy = true;
     const ticket = ++claimTicket;
     try {
       const out = await claim();

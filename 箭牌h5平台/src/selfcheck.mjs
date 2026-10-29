@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SCENARIO, DEVICES } from '../scenario.mjs';
 import { createGate } from './policy.mjs';
 import { actionFromCall, asrUtterance, extractAction, classifyFrame, functionResultFrame, parseFunction, visibleAgent } from './frames.mjs';
-import { topicModel } from './topic.mjs';
+import { topicImage, topicModel, topicView } from './topic.mjs';
 import { buildRole, userEcho, visibleReply } from './roster.mjs';
 import { completeItem, fillTargets, narrowDevices, trustedName } from './resolve.mjs';
 import { agentConfig, licActiveFrame } from './aiagent.mjs';
@@ -45,8 +45,15 @@ assert.equal(asrUtterance('我没有听清，请再说一遍'), '');
 assert.equal(asrUtterance('没听清'), '');
 assert.equal(asrUtterance('把主卫镜柜的夜灯打开'), '把主卫镜柜的夜灯打开');
 assert.equal(topicModel('这个月调用了多少次'), 'iot_calls');
+assert.equal(topicModel('帮我生成检修报告'), 'iot_calls');
 assert.equal(topicModel('哪台用得最久'), 'usage_duration');
 assert.equal(topicModel('把主卫镜柜的夜灯打开'), '');
+const view = topicView('检修报告已生成。\n```html\n<!doctype html><html><body>30</body></html>\n```');
+assert.equal(view.say, '检修报告已生成。');
+assert.equal(view.html.includes('<html>'), true);
+assert.equal(topicView('只有一句结论').html, '');
+assert.equal(topicImage('图片已生成。'), true);
+assert.equal(topicImage('检修报告已生成。'), false);
 assert.equal(visibleAgent('请提供卫浴设备名称（deviceName）和执行动作（cmd）'), '');
 assert.equal(visibleAgent('请提供设备名称和具体操作（如大冲、小冲、夜灯开关等）；其余参数可选。'), '');
 assert.equal(visibleAgent('请提供设备名称和具体指令（如大冲、小冲、夜灯开关等）；其他参数可选提供。'), '');
@@ -105,6 +112,9 @@ assert.equal(matched.echo, true);
 assert.equal(matched.text, '把主卫的浴缸进水打开');
 assert.equal(matched.text.includes('ARROWToilet'), false);
 assert.equal(userEcho('把灯打开', '把主卫的浴缸进水打开').echo, false);
+assert.equal(userEcho('用户：把主卫的浴缸进水打开', '把主卫的浴缸进水打开').echo, true);
+assert.equal(userEcho('把主卫的浴', '把主卫的浴缸进水打开').echo, true);
+assert.equal(userEcho('把主卫的夜灯打开', '夜灯打开').echo, false);
 assert.equal(userEcho(replay, '').text, '把主卫的浴缸进水打开');
 const blind = buildRole({ scenario: SCENARIO, devices: DEVICES.devices, live: { ok: false, error: '鉴权失败' } });
 assert.equal(blind.includes('不要编造设备'), true);
@@ -192,6 +202,20 @@ const rejected = await failing.finish({
 });
 assert.equal(rejected.cards.at(-1).data.result, 'FAILED');
 assert.equal(rejected.receipt.includes('离线'), true);
+
+const progress = await turn.finish({
+  sessionId: 'hs_progress',
+  action: { action: 'repair.open', kind: 'progress' },
+});
+assert.equal(progress.cards[0].data.deeplink, 'arrowhome://repair/list?from=ai_assistant');
+assert.equal(progress.cards[0].data.kind, 'progress');
+assert.equal(progress.receipt, '已准备好进度入口。');
+const report = await turn.finish({
+  sessionId: 'hs_report',
+  action: { action: 'repair.open', kind: 'report' },
+});
+assert.equal(report.cards[0].data.deeplink, 'arrowhome://repair/create?from=ai_assistant');
+assert.equal(report.cards[0].data.kind, 'report');
 
 assert.equal(trustedName('不存在的设备', DEVICES.devices), '');
 assert.equal(trustedName('ARROWToilet17419421020631', DEVICES.devices), 'ARROWToilet17419421020631');

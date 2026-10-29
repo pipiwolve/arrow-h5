@@ -5,3 +5,6 @@ state.json
 audit.jsonl
 cards.jsonl
 node_modules/
+
+.codegraph/
+.DS_Store

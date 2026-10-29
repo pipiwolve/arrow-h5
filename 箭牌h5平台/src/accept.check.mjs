@@ -105,7 +105,7 @@ const gate = createTurnGate({
 });
 const older = await gate.openTurn('room');
 const newer = await gate.openTurn('room');
-record('打断', '上一句未结束时发送新问题', sent.filter((f) => f === '[B]').length === 2 && gate.stale(older) && !gate.stale(newer), '新一句打断上一句');
+record('打断', '上一句未结束时发送新问题', sent.filter((f) => f === '[B]').length === 1 && gate.stale(older) && !gate.stale(newer), '新一句打断上一句');
 
 const groups = new Map();
 for (const row of rows) {

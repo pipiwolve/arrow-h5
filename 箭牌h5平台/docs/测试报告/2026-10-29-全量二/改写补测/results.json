@@ -1,0 +1,182 @@
+{
+  "file": "/tmp/kb-empty11.jsonl",
+  "at": "2026-10-29T07:00:24.987Z",
+  "results": [
+    {
+      "id": "W10",
+      "style": "多事实",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "AKB1357座圈、清洗水和暖风各能调到多少度",
+      "answer": "座圈温度约33到39°C，共5档。  \n清洗水温约32到38°C，共5档。  \n暖风温度约35到60°C，共5档。",
+      "ms": 5223,
+      "note": "三段温度都要出现",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W11",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "保养",
+      "question": "1357滤芯坏了算不算保修，一般多久得换一次",
+      "answer": "滤芯保修和更换周期啊",
+      "ms": 4263,
+      "note": "带问号的保养问答进房间",
+      "pass": false,
+      "missing": [
+        "18个月"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W13",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "保修",
+      "question": "AKB1357整机保修几年？客服电话是多少？",
+      "answer": "保修和客服啊六年。  \n客服电话400-8301831。",
+      "ms": 4545,
+      "note": "写作说明不要念给用户",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W14",
+      "style": "路由",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q上电不能开机怎么办？",
+      "answer": "已准备好报修入口。",
+      "ms": 2616,
+      "note": "故障排查进知识库",
+      "pass": false,
+      "missing": [
+        "控制板"
+      ],
+      "banned": [
+        "已准备好报修入口"
+      ],
+      "anyHit": []
+    },
+    {
+      "id": "W15",
+      "style": "缺型号",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎这款轻智能的能洗屁股吗",
+      "answer": "",
+      "ms": 32748,
+      "note": "没有型号时应否认或追问，不要编时长",
+      "pass": false,
+      "missing": [
+        "须命中其一"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W17",
+      "style": "同义",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华做完女士清洗起身，它冲大的还是小的",
+      "answer": "冲水逻辑啊",
+      "ms": 2648,
+      "note": "女士清洗指妇洗",
+      "pass": false,
+      "missing": [
+        "小冲"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W18",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "1357坑距多少，长宽高给我一个数",
+      "answer": "",
+      "ms": 32331,
+      "note": "不许用常见值或其他型号填数",
+      "pass": false,
+      "missing": [
+        "须命中其一"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W19",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "AKB1357L和M差别大吗",
+      "answer": "",
+      "ms": 32418,
+      "note": "说明书未区分",
+      "pass": false,
+      "missing": [
+        "未"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W20",
+      "style": "同义",
+      "brand": "跨型号",
+      "category": "边界",
+      "question": "这三台里哪台不能冲着洗",
+      "answer": "",
+      "ms": 32921,
+      "note": "冲着洗指臀洗",
+      "pass": false,
+      "missing": [
+        "法恩莎"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W21",
+      "style": "口语",
+      "brand": "跨型号",
+      "category": "保修",
+      "question": "三家客服电话各是多少",
+      "answer": "",
+      "ms": 32481,
+      "note": "三个号码都要出现",
+      "pass": false,
+      "missing": [
+        "400-8301831",
+        "400-101-3862",
+        "400-1066-828"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W34",
+      "style": "口语",
+      "brand": "安华",
+      "category": "故障",
+      "question": "安华座圈摸着是凉的，先看什么",
+      "answer": "",
+      "ms": 33165,
+      "note": "先看座温是否关档",
+      "pass": false,
+      "missing": [
+        "关闭"
+      ],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

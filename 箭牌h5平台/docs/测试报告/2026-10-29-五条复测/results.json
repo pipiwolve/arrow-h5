@@ -1,0 +1,86 @@
+{
+  "file": "/tmp/kb-five.jsonl",
+  "at": "2026-10-29T07:19:18.447Z",
+  "results": [
+    {
+      "id": "W05",
+      "style": "口语",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "坐上AKB1357那个圈，最热大概多少度，能调几档",
+      "answer": "AKB1357圈的温度和档位啊.座圈温度最高约39°C，共5档可调。",
+      "ms": 3827,
+      "note": "不说座圈温度怎么调",
+      "pass": false,
+      "missing": [
+        "33"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W17",
+      "style": "同义",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华做完女士清洗起身，它冲大的还是小的",
+      "answer": "",
+      "ms": 32449,
+      "note": "女士清洗指妇洗",
+      "pass": false,
+      "missing": [
+        "小冲"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W18",
+      "style": "边界",
+      "brand": "箭牌",
+      "category": "边界",
+      "question": "1357坑距多少，长宽高给我一个数",
+      "answer": "",
+      "ms": 32465,
+      "note": "不许用常见值或其他型号填数",
+      "pass": false,
+      "missing": [
+        "须命中其一"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W28",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华节能开着，放多久没人动会再进去",
+      "answer": "",
+      "ms": 32420,
+      "note": "节能是连续1小时，不是商务模式的72小时",
+      "pass": false,
+      "missing": [
+        "1小时"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W33",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "法恩莎夜灯不亮，先查哪里",
+      "answer": "",
+      "ms": 32463,
+      "note": "问法进房间，不选设备",
+      "pass": false,
+      "missing": [
+        "灯"
+      ],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}

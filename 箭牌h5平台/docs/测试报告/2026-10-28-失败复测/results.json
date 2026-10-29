@@ -1,0 +1,158 @@
+{
+  "file": "/tmp/kb-fail10.jsonl",
+  "at": "2026-10-28T10:07:05.468Z",
+  "results": [
+    {
+      "id": "W01",
+      "style": "开放列举",
+      "brand": "箭牌",
+      "category": "开放",
+      "question": "AKB1357 有哪些功能",
+      "answer": "AKB1357的功能啊臀洗、妇洗、助便畅洗、深层净洗、全面护理、暖风烘干、座圈加热、智慧清洁、全域除菌。",
+      "ms": 3831,
+      "note": "只列清洗稿写明的功能",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W04",
+      "style": "同义",
+      "brand": "箭牌",
+      "category": "参数",
+      "question": "箭牌1357这马桶费电吗，加热是即热的那种吗",
+      "answer": "加热方式啊箭牌AKB1357L/AKB1357M额定输入功率900W，即热式。",
+      "ms": 3481,
+      "note": "不说额定功率",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W06",
+      "style": "同义",
+      "brand": "箭牌",
+      "category": "功能",
+      "question": "AKB1357女性清洗一次大概持续多久",
+      "answer": "箭牌AKB1357L/AKB1357M落座后按妇洗，执行女性清洗约90秒。",
+      "ms": 3493,
+      "note": "女性清洗指妇洗",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W13",
+      "style": "路由",
+      "brand": "箭牌",
+      "category": "保修",
+      "question": "AKB1357整机保修几年？客服电话是多少？",
+      "answer": "箭牌AKB1357L/AKB1357M自销售之日起整机保修六年。保修期内凭保修卡和购买发票或收据免费保修，复印件无效。质保期外新换配件保质期90天。电池、发泡剂、过滤器滤芯等耗材不保修。本卡仅限家用。\n\n箭牌客服热线400-8301831。官网www.arrow-home.cn。也可联系授权经销商或门店。这个电话只用于箭牌，不要答成其他品牌的客服。",
+      "ms": 4097,
+      "note": "写作说明不要念给用户",
+      "pass": false,
+      "missing": [],
+      "banned": [
+        "不要答成"
+      ],
+      "anyHit": []
+    },
+    {
+      "id": "W14",
+      "style": "路由",
+      "brand": "法恩莎",
+      "category": "故障",
+      "question": "FLM0814S-Q上电不能开机怎么办？",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM上电不能开机时，先看控制板电源插头是否接错或松动，重新接插。控制板不良则更换控制板模块。这是维修向说明，不要自行拆机。",
+      "ms": 4096,
+      "note": "故障排查进知识库",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W16",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华马桶放好几天没人用，座圈加热会不会自己关掉",
+      "answer": "说明书未记载",
+      "ms": 2581,
+      "note": "好几天对应商务模式72小时",
+      "pass": false,
+      "missing": [
+        "72"
+      ],
+      "banned": [
+        "未记载"
+      ],
+      "anyHit": []
+    },
+    {
+      "id": "W17",
+      "style": "同义",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华做完女士清洗起身，它冲大的还是小的",
+      "answer": "说明书未记载",
+      "ms": 2582,
+      "note": "女士清洗指妇洗",
+      "pass": false,
+      "missing": [
+        "小冲"
+      ],
+      "banned": [
+        "未记载"
+      ],
+      "anyHit": []
+    },
+    {
+      "id": "W23",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎这马桶座圈一共几档，算上关掉的吗",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM座温一共六档，是1、2、3、4、5和关闭0档。",
+      "ms": 3057,
+      "note": "六档含关闭0档",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W28",
+      "style": "口语",
+      "brand": "安华",
+      "category": "功能",
+      "question": "安华节能开着，放多久没人动会再进去",
+      "answer": "说明书未记载",
+      "ms": 2557,
+      "note": "节能是连续1小时，不是商务模式的72小时",
+      "pass": false,
+      "missing": [
+        "1小时"
+      ],
+      "banned": [],
+      "anyHit": []
+    },
+    {
+      "id": "W30",
+      "style": "口语",
+      "brand": "法恩莎",
+      "category": "功能",
+      "question": "法恩莎刚冲完再按一下，会怎么样",
+      "answer": "法恩莎FLM0814S-QL/FLM0814S-QM冲水启动后需要约30秒补水。补水期间再冲不会启动，蜂鸣器响两声。",
+      "ms": 3134,
+      "note": "补水约30秒，再冲不启动",
+      "pass": true,
+      "missing": [],
+      "banned": [],
+      "anyHit": []
+    }
+  ]
+}
